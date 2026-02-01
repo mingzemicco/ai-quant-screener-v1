@@ -1,7 +1,6 @@
 from flask import Flask, render_template_string, send_from_directory, jsonify
 import json
 import os
-from logic import AIScreener
 
 app = Flask(__name__)
 
@@ -139,17 +138,9 @@ def get_companies():
 @app.route('/api/run_analysis')
 def run_analysis():
     """Endpoint pour exécuter une nouvelle analyse"""
-    try:
-        screener = AIScreener()
-        results = screener.screen_companies()
-        
-        # Sauvegarder les résultats
-        with open('screener_results.json', 'w', encoding='utf-8') as f:
-            json.dump(results, f, indent=2, ensure_ascii=False)
-        
-        return jsonify({"status": "success", "message": f"Analyse terminée pour {len(results)} entreprises"})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+    # Pour l'instant, retourner un message d'information
+    # L'analyse réelle nécessiterait la configuration de l'API Alpha Vantage
+    return jsonify({"status": "info", "message": "L'analyse complète nécessite la configuration de l'API Alpha Vantage et la gestion des quotas API"})
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
