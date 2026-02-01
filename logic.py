@@ -140,7 +140,7 @@ class AIScreener:
             print(f"Analyse de {symbol}...")
             company_data = self.get_company_overview(symbol)
             
-            if company_data:
+            if company_data and company_data != {}:
                 score, analysis = self.calculate_ai_impact_score(company_data)
                 
                 results.append({
@@ -152,11 +152,32 @@ class AIScreener:
                     "ai_impact_score": round(score, 2),
                     "analysis": analysis
                 })
+            else:
+                print(f"Pas de données disponibles pour {symbol}, tentative avec des données partielles...")
+                # Ajouter quand même une entrée avec des données partielles
+                results.append({
+                    "symbol": symbol,
+                    "company_name": symbol,
+                    "sector": sector,
+                    "current_price": 0,
+                    "market_cap": 0,
+                    "ai_impact_score": 0,
+                    "analysis": {
+                        "reasoning": f"Aucune donnée disponible pour {symbol} via l'API Alpha Vantage",
+                        "metrics": {
+                            "P/E Ratio": 0,
+                            "Market Cap": 0,
+                            "ROE": 0,
+                            "EPS Growth": 0,
+                            "Debt/Equity": 0
+                        }
+                    }
+                })
             
-            # Ajouter un délai de 5 secondes entre les requêtes pour éviter les limitations de débit
+            # Ajouter un délai de 10 secondes entre les requêtes pour éviter les limitations de débit
             if i < len(self.software_companies) - 1:  # Ne pas attendre après la dernière requête
-                print(f"Attente de 5 secondes avant la prochaine requête...")
-                time.sleep(5)
+                print(f"Attente de 10 secondes avant la prochaine requête...")
+                time.sleep(10)
         
         # Trier par score d'impact IA (du plus haut au plus bas)
         results.sort(key=lambda x: x['ai_impact_score'], reverse=True)
