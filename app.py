@@ -1,20 +1,74 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, session, redirect, url_for
 import os
 import json
 import threading
-from database import get_session, CompanyAnalysis
+from functools import wraps
+from werkzeug.security import check_password_hash
+from database import get_session, CompanyAnalysis, User
 from llm_service import LLMService
 from logic import AIScreener
 
 # Version mise à jour pour Railway deployment
-APP_VERSION = "2.1.0"
+APP_VERSION = "3.0.0"
 
 app = Flask(__name__)
+app.secret_key = "ai_quant_screener_secret_ultra_key" # In production, use env variable
 llm_service = LLMService()
 
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_email' not in session:
+            return redirect(url_for('landing'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 @app.route('/')
+def landing():
+    filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'landing.html')
+    if not os.path.exists(filepath):
+        # Fallback if I haven't created it yet
+        return "Landing Page Coming Soon... Click <a href='/web'>here</a> to enter."
+    with open(filepath, 'r', encoding='utf-8') as f:
+        return f.read()
+
+@app.route('/login', methods=['POST'])
+def login():
+    import time
+    start_time = time.time()
+    
+    data = request.json
+    email = data.get('email')
+    password = data.get('password')
+    
+    db_session = get_session()
+    session_time = time.time()
+    print(f"DEBUG: Session created in {session_time - start_time:.4f}s")
+    
+    user = db_session.query(User).filter_by(email=email).first()
+    query_time = time.time()
+    print(f"DEBUG: User query executed in {query_time - session_time:.4f}s")
+    
+    if user and check_password_hash(user.password_hash, password):
+        hash_time = time.time()
+        print(f"DEBUG: Password hash checked in {hash_time - query_time:.4f}s")
+        session['user_email'] = user.email
+        db_session.close()
+        return jsonify({"status": "success", "redirect": "/web"})
+    
+    hash_time = time.time()
+    print(f"DEBUG: Password hash failed in {hash_time - query_time:.4f}s")
+    db_session.close()
+    return jsonify({"status": "error", "message": "Invalid email or password"}), 401
+
+@app.route('/logout')
+def logout():
+    session.pop('user_email', None)
+    return redirect(url_for('landing'))
+
+@app.route('/web')
+@login_required
 def index():
-    import os
     filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'index.html')
     with open(filepath, 'r', encoding='utf-8') as f:
         return f.read()
