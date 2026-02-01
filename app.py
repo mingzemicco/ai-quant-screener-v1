@@ -11,7 +11,9 @@ def get_mock_data():
 
 @app.route('/')
 def index():
-    with open('index.html', 'r', encoding='utf-8') as f:
+    import os
+    filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'index.html')
+    with open(filepath, 'r', encoding='utf-8') as f:
         return f.read()
 
 @app.route('/api/companies')
