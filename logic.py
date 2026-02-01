@@ -133,9 +133,10 @@ class AIScreener:
     
     def screen_companies(self) -> List[Dict]:
         """Analyse toutes les entreprises du secteur logiciel"""
+        import time
         results = []
         
-        for symbol, sector in self.software_companies.items():
+        for i, (symbol, sector) in enumerate(self.software_companies.items()):
             print(f"Analyse de {symbol}...")
             company_data = self.get_company_overview(symbol)
             
@@ -151,6 +152,11 @@ class AIScreener:
                     "ai_impact_score": round(score, 2),
                     "analysis": analysis
                 })
+            
+            # Ajouter un délai de 5 secondes entre les requêtes pour éviter les limitations de débit
+            if i < len(self.software_companies) - 1:  # Ne pas attendre après la dernière requête
+                print(f"Attente de 5 secondes avant la prochaine requête...")
+                time.sleep(5)
         
         # Trier par score d'impact IA (du plus haut au plus bas)
         results.sort(key=lambda x: x['ai_impact_score'], reverse=True)
