@@ -4,7 +4,16 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "gunicorn app:app",
-    "healthcheckPath": "/"
+    "startCommand": "gunicorn app:app -b 0.0.0.0:$PORT --timeout 120",
+    "healthcheckPath": "/",
+    "healthchecks": {
+      "liveness": {
+        "path": "/",
+        "port": 8080,
+        "timeout": 5000,
+        "interval": 10,
+        "retries": 3
+      }
+    }
   }
 }
