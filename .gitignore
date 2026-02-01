@@ -1,0 +1,36 @@
+# Fichiers d'environnement
+.env
+*.env
+
+# Fichiers de configuration sensibles
+credentials/
+config.json
+settings.json
+
+# Fichiers de test contenant des clés
+test_keys.py
+test-*.py
+*_keys.py
+
+# Fichiers temporaires
+*.tmp
+*.temp
+*.bak
+
+# Logs
+*.log
+logs/
+
+# Fichiers de cache Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Fichiers de cache divers
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
