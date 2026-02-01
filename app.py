@@ -125,9 +125,9 @@ def get_companies():
                 "analysis": {
                     "reasoning": "Spécialiste de l'analyse de données pour gouvernement et entreprises; position unique dans l'analyse sémantique et IA; barrière à l'entrée élevée; mais valorisation incertaine; EPS Growth limité",
                     "metrics": {
-                        "P/E Ratio": 0, // Pas de profit
+                        "P/E Ratio": 0, # Pas de profit
                         "Market Cap": 40000000000,
-                        "ROE": -0.05, // Perte
+                        "ROE": -0.05, # Perte
                         "EPS Growth": 0.05,
                         "Debt/Equity": 0.02
                     }
