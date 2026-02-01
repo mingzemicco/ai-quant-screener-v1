@@ -3,6 +3,9 @@ import json
 import os
 import sys
 
+# Version mise à jour pour Railway deployment
+APP_VERSION = "1.0.1"
+
 app = Flask(__name__)
 
 # Charger les données simulées pour la démonstration
@@ -148,3 +151,5 @@ def run_analysis():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     app.run(debug=False, host='0.0.0.0', port=port)
+
+# Fin du fichier app.py
