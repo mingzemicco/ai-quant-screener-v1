@@ -371,8 +371,8 @@
     </div>
 
     <script>
-        // Données simulées pour la démonstration
-        // Dans une version réelle, ces données viendraient de l'API backend
+        /* Données simulées pour la démonstration */
+        /* Dans une version réelle, ces données viendraient de l'API backend */
         const mockData = [
             {
                 "symbol": "SALESFORCE",
@@ -476,7 +476,7 @@
                     "metrics": {
                         "P/E Ratio": 0, 
                         "Market Cap": 40000000000,
-                        "ROE": -0.05, // Perte
+                        "ROE": -0.05 /* Pas de profit */
                         "EPS Growth": 0.05,
                         "Debt/Equity": 0.02
                     }
@@ -484,7 +484,7 @@
             }
         ];
 
-        // Fonction pour formater les grands nombres
+        /* Fonction pour formater les grands nombres */
         function formatNumber(num) {
             if (num >= 1000000000) {
                 return '$' + (num / 1000000000).toFixed(2) + 'B';
@@ -495,12 +495,12 @@
             }
         }
 
-        // Fonction pour afficher les entreprises
+        /* Fonction pour afficher les entreprises */
         function displayCompanies(companies) {
             const container = document.getElementById('companies-container');
             container.innerHTML = '';
 
-            // Mettre à jour les statistiques
+            /* Mettre à jour les statistiques */
             document.getElementById('total-companies').textContent = companies.length;
             
             const avgScore = companies.reduce((sum, comp) => sum + comp.ai_impact_score, 0) / companies.length;
@@ -530,7 +530,7 @@
             });
         }
 
-        // Fonction pour afficher les détails d'une entreprise
+        /* Fonction pour afficher les détails d'une entreprise */
         function showCompanyDetails(company) {
             document.getElementById('modal-company-name').textContent = `${company.company_name} (${company.symbol})`;
             document.getElementById('modal-price').textContent = `$${company.current_price.toFixed(2)} | Cap. ${formatNumber(company.market_cap)}`;
@@ -538,7 +538,7 @@
             document.getElementById('modal-score').textContent = `${company.ai_impact_score}/100`;
             document.getElementById('modal-reasoning').textContent = company.analysis.reasoning;
 
-            // Afficher les métriques
+            /* Afficher les métriques */
             const metricsContainer = document.getElementById('modal-metrics');
             metricsContainer.innerHTML = '';
             
@@ -565,12 +565,12 @@
             document.getElementById('company-modal').style.display = 'flex';
         }
 
-        // Fonction pour fermer le modal
+        /* Fonction pour fermer le modal */
         function closeModals() {
             document.getElementById('company-modal').style.display = 'none';
         }
 
-        // Événements
+        /* Événements */
         document.getElementById('refresh-btn').addEventListener('click', () => {
             alert('Dans une version réelle, cette fonction actualiserait les données depuis le backend.');
         });
@@ -586,13 +586,13 @@
             }
         });
 
-        // Désactiver le bouton d'achat dans la démo
+        /* Désactiver le bouton d'achat dans la démo */
         document.getElementById('purchase-report-btn').addEventListener('click', (e) => {
             e.stopPropagation();
             alert('Fonctionnalité de paiement disponible dans la version complète avec intégration Stripe.');
         });
 
-        // Charger les données au chargement de la page
+        /* Charger les données au chargement de la page */
         document.addEventListener('DOMContentLoaded', () => {
             displayCompanies(mockData);
         });
