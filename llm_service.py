@@ -2,11 +2,7 @@ import os
 import json
 import google.generativeai as genai
 from openai import OpenAI
-from dotenv import load_dotenv
 from database import get_session, PromptConfig
-
-# Charger les variables d'environnement depuis .env
-load_dotenv()
 
 # Configuration par défaut
 DEFAULT_SYSTEM_PROMPT = """
