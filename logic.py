@@ -6,14 +6,10 @@ from typing import Dict, List, Tuple
 
 class AIScreener:
     def __init__(self):
-        # Charger la clé API Alpha Vantage
-        try:
-            with open('../../credentials/alpha_vantage.json', 'r') as f:
-                creds = json.load(f)
-                self.api_key = creds['api_key']
-        except FileNotFoundError:
-            # Si le fichier n'existe pas, essayer d'autres sources
-            self.api_key = os.getenv('ALPHA_VANTAGE_API_KEY', 'AAF5VV7X7707GCMP')
+        # Charger la clé API Alpha Vantage depuis la variable d'environnement
+        self.api_key = os.getenv('ALPHA_VANTAGE_API_KEY')
+        if not self.api_key:
+            raise ValueError("La variable d'environnement ALPHA_VANTAGE_API_KEY n'est pas définie")
         
         self.base_url = 'https://www.alphavantage.co/query'
         self.software_companies = {
