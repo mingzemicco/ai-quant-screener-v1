@@ -1,29 +1,28 @@
 import requests
 import json
 import os
-from datetime import datetime
+import time
+from datetime import datetime, timedelta
 from typing import Dict, List, Tuple
+from database import get_session, CompanyAnalysis
+from llm_service import LLMService
 
 class AIScreener:
     def __init__(self):
-        # Charger la clé API Alpha Vantage depuis la variable d'environnement
         self.api_key = os.getenv('ALPHA_VANTAGE_API_KEY')
-        if not self.api_key:
-            raise ValueError("La variable d'environnement ALPHA_VANTAGE_API_KEY n'est pas définie")
+        # On ne lève plus d'erreur ici pour permettre l'utilisation hors-ligne (re-analyse DB)
         
         self.base_url = 'https://www.alphavantage.co/query'
-        self.software_companies = {
-            'SALESFORCE': 'CRM',
-            'ORACLE': 'ERP/Database',
-            'ADOBE': 'Creative/Creative Cloud',
-            'WORKDAY': 'HR Software',
-            'SNOWFLAKE': 'Cloud Data Platform',
-            'PALANTIR': 'Data Analytics',
-            'COGNIZANT': 'IT Services',
-            'ACCENTURE': 'Consulting/IT Services',
-            'INTUIT': 'Accounting Software',
-            'ANAPLAN': 'Business Planning'
-        }
+        self.llm_service = LLMService()
+        
+        # Charger la liste du S&P 500 depuis le fichier JSON
+        json_path = os.path.join(os.path.dirname(__file__), 'sp500.json')
+        try:
+            with open(json_path, 'r') as f:
+                self.software_companies = json.load(f)
+        except Exception as e:
+            print(f"Erreur lors du chargement de sp500.json: {e}")
+            self.software_companies = {}
     
     def get_company_overview(self, symbol: str) -> dict:
         """Récupère les données de base d'une entreprise via Alpha Vantage"""
@@ -36,8 +35,6 @@ class AIScreener:
         try:
             response = requests.get(self.base_url, params=params)
             data = response.json()
-            
-            # Vérifier si la requête a réussi
             if 'Symbol' in data:
                 return data
             else:
@@ -47,152 +44,144 @@ class AIScreener:
             print(f"Erreur lors de la récupération des données pour {symbol}: {e}")
             return {}
     
-    def calculate_ai_impact_score(self, company_data: dict) -> Tuple[float, dict]:
-        """Calcule le score d'impact IA basé sur notre modèle d'analyse"""
-        if not company_data:
-            return 0.0, {"reasoning": "Aucune donnée disponible pour cette entreprise."}
+    def _safe_float(self, value):
+        if value is None or value == 'None' or value == '-':
+            return 0.0
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            return 0.0
+
+    def update_database(self):
+        """Met à jour la base de données : télécharge seulement si nécessaire"""
+        session = get_session()
         
-        symbol = company_data.get('Symbol', 'UNKNOWN')
+        # Charger le prompt actuel une fois
+        current_prompt = self.llm_service.get_current_prompt()
+        print("Using System Prompt for Analysis...")
         
-        # Extraire les données pertinentes
-        pe_ratio = float(company_data.get('PERatio', 0) or 0)
-        market_cap = float(company_data.get('MarketCapitalization', 0) or 0)
-        roe = float(company_data.get('ReturnOnEquityTTM', 0) or 0)
-        debt_to_equity = float(company_data.get('DebtToEquityRatio', 0) or 0)
-        eps_growth = float(company_data.get('EPSGrowthPast5Years', 0) or 0)
-        
-        # Logique d'analyse
-        score = 50  # Score de base
-        reasoning = []
-        
-        # Analyse Short (risques)
-        if pe_ratio > 50:
-            score -= 15
-            reasoning.append(f"Ratio P/E élevé ({pe_ratio:.2f}), valorisation potentiellement excessive")
-        elif pe_ratio > 30:
-            score -= 7
-            reasoning.append(f"Ratio P/E élevé ({pe_ratio:.2f})")
-        else:
-            reasoning.append(f"Ratio P/E raisonnable ({pe_ratio:.2f})")
-        
-        # Secteur vulnérable à l'IA (HR, comptabilité, ERP traditionnels)
-        sector = company_data.get('Sector', '').lower()
-        if any(sector_keyword in sector for sector_keyword in ['human resources', 'accounting', 'erp']):
-            score -= 10
-            reasoning.append("Secteur potentiellement vulnérable à l'automatisation par l'IA")
-        
-        # Analyse Long (opportunités)
-        if market_cap > 50000000000:  # Plus de 50 milliards
-            score += 5
-            reasoning.append("Grande capitalisation, ressources pour investir dans l'IA")
-        
-        if roe > 0.15:  # ROE > 15%
-            score += 10
-            reasoning.append(f"Bonne rentabilité (ROE: {roe:.2%})")
-        elif roe > 0.10:
-            score += 5
-            reasoning.append(f"Rentabilité satisfaisante (ROE: {roe:.2%})")
-        
-        if eps_growth > 0.15:  # EPS Growth > 15%
-            score += 10
-            reasoning.append(f"Bonne croissance des bénéfices (EPS Growth: {eps_growth:.2%})")
-        elif eps_growth > 0.10:
-            score += 5
-            reasoning.append(f"Croissance des bénéfices solide (EPS Growth: {eps_growth:.2%})")
-        
-        # Vérifier si l'entreprise est active dans l'IA
-        description = company_data.get('Description', '').lower()
-        if any(ai_keyword in description for ai_keyword in ['artificial intelligence', 'machine learning', 'ai ', 'ai,', 'ai.', 'ai-', 'deep learning', 'neural network']):
-            score += 15
-            reasoning.append("Actif dans l'IA/intelligence artificielle")
-        else:
-            reasoning.append("Moins d'activité apparente dans l'IA")
-        
-        # Ajustement pour la dette
-        if debt_to_equity > 1.0:
-            score -= 5
-            reasoning.append(f"Niveau d'endettement élevé (D/E: {debt_to_equity:.2f})")
-        
-        # Normaliser le score entre 0 et 100
-        score = max(0, min(100, score))
-        
-        return score, {
-            "reasoning": "; ".join(reasoning),
-            "metrics": {
-                "P/E Ratio": pe_ratio,
-                "Market Cap": market_cap,
-                "ROE": roe,
-                "EPS Growth": eps_growth,
-                "Debt/Equity": debt_to_equity
-            }
-        }
-    
-    def screen_companies(self) -> List[Dict]:
-        """Analyse toutes les entreprises du secteur logiciel"""
-        import time
-        results = []
-        
-        for i, (symbol, sector) in enumerate(self.software_companies.items()):
-            print(f"Analyse de {symbol}...")
-            company_data = self.get_company_overview(symbol)
+        for i, (symbol, sector_desc) in enumerate(self.software_companies.items()):
+            existing = session.query(CompanyAnalysis).filter_by(symbol=symbol).first()
             
-            if company_data and company_data != {}:
-                score, analysis = self.calculate_ai_impact_score(company_data)
-                
-                results.append({
-                    "symbol": symbol,
-                    "company_name": company_data.get('Name', symbol),
-                    "sector": sector,
-                    "current_price": float(company_data.get('Price', 0) or 0),
-                    "market_cap": float(company_data.get('MarketCapitalization', 0) or 0),
-                    "ai_impact_score": round(score, 2),
-                    "analysis": analysis
-                })
+            # Logique de mise à jour:
+            # 1. Si pas de données, on fetch tout.
+            # 2. Si données > 24h, on fetch tout.
+            # 3. Si on demande explicitement un 're-run' (via un flag, à implémenter plus tard), sinon on update juste l'analyse si le prompt a changé
+            
+            should_fetch_api = True
+            if existing and existing.last_updated:
+                 last_updated = existing.last_updated.replace(tzinfo=None) if existing.last_updated else None
+                 if last_updated and datetime.now() - last_updated < timedelta(hours=24):
+                     should_fetch_api = False
+
+            company_data = {}
+            if should_fetch_api:
+                print(f"Fetching API data for {symbol}...")
+                company_data = self.get_company_overview(symbol)
+                if not company_data:
+                    print(f"Skipping {symbol} due to API error")
+                    continue
+                # Respecter le quota API
+                print("Sleeping 12s for API limit...")
+                time.sleep(12)
             else:
-                print(f"Pas de données disponibles pour {symbol}, tentative avec des données partielles...")
-                # Ajouter quand même une entrée avec des données partielles
-                results.append({
-                    "symbol": symbol,
-                    "company_name": symbol,
-                    "sector": sector,
-                    "current_price": 0,
-                    "market_cap": 0,
-                    "ai_impact_score": 0,
-                    "analysis": {
-                        "reasoning": f"Aucune donnée disponible pour {symbol} via l'API Alpha Vantage",
-                        "metrics": {
-                            "P/E Ratio": 0,
-                            "Market Cap": 0,
-                            "ROE": 0,
-                            "EPS Growth": 0,
-                            "Debt/Equity": 0
-                        }
+                # Si les données sont fraîches (<24h), on ne fait rien dans le cycle automatique
+                # L'utilisateur peut forcer une ré-analyse via /api/reanalyze qui utilise reanalyze_existing_data
+                print(f"Data fresh for {symbol}. Skipping API fetch.")
+                continue
+
+            # Si on est ici, c'est qu'on a fetched des nouvelles données API
+            if company_data:
+                print(f"Analyzing {symbol} with LLM...")
+                llm_result = self.llm_service.analyze_company(company_data, current_prompt)
+                
+                if llm_result:
+                    new_data = {
+                        'symbol': symbol,
+                        'company_name': company_data.get('Name', symbol),
+                        'sector': sector_desc,
+                        'current_price': self._safe_float(company_data.get('Price')),
+                        'market_cap': self._safe_float(company_data.get('MarketCapitalization')),
+                        'pe_ratio': self._safe_float(company_data.get('PERatio')),
+                        'roe': self._safe_float(company_data.get('ReturnOnEquityTTM')),
+                        'eps_growth': self._safe_float(company_data.get('EPSGrowthPast5Years')),
+                        'debt_to_equity': self._safe_float(company_data.get('DebtToEquityRatio')),
+                        
+                        'ai_impact_score': llm_result.get('score', 50),
+                        'recommendation': llm_result.get('recommendation', 'NEUTRAL'),
+                        'reasoning': llm_result.get('reasoning', 'Analysis failed'),
+                        'analysis_json': llm_result
                     }
-                })
+                    
+                    if existing:
+                        for key, value in new_data.items():
+                            setattr(existing, key, value)
+                    else:
+                        new_record = CompanyAnalysis(**new_data)
+                        session.add(new_record)
+                    session.commit()
+                    print(f"Updated {symbol} in DB.")
+
+        session.close()
+        print("Database update cycle complete.")
+
+    def reanalyze_existing_data(self):
+        """Ré-analyse toutes les entreprises en base avec le prompt actuel (sans fetch API)"""
+        session = get_session()
+        companies = session.query(CompanyAnalysis).all()
+        
+        current_prompt = self.llm_service.get_current_prompt()
+        print(f"Re-analyzing {len(companies)} companies with updated prompt...")
+        
+        for i, company in enumerate(companies):
+            # Reconstruire un objet pseudo-data pour l'LLM
+            # Note: C'est une approximation car on n'a pas gardé tout le JSON raw d'Alpha Vantage
+            # Mais on a les métriques clés stockées en colonnes.
+            company_data = {
+                'Symbol': company.symbol,
+                'Name': company.company_name,
+                'Sector': company.sector,
+                # Description n'était pas stockée dans les colonnes principales, mais peut-être dans analysis_json ?
+                # Pour l'instant on fait sans description ou on la récupère si possible.
+                'Description': company.sector, # Fallback
+                'Price': company.current_price,
+                'PERatio': company.pe_ratio,
+                'MarketCapitalization': company.market_cap,
+                'ReturnOnEquityTTM': company.roe,
+                'EPSGrowthPast5Years': company.eps_growth,
+                'DebtToEquityRatio': company.debt_to_equity
+            }
             
-            # Ajouter un délai de 10 secondes entre les requêtes pour éviter les limitations de débit
-            if i < len(self.software_companies) - 1:  # Ne pas attendre après la dernière requête
-                print(f"Attente de 10 secondes avant la prochaine requête...")
-                time.sleep(10)
+            # Essayer de récupérer la description depuis le json stocké si dispo
+            if company.analysis_json and isinstance(company.analysis_json, dict):
+                 # Ce dictionnaire contient le résultat de l'LLM précédent, pas les données brutes AV
+                 pass
+
+            print(f"[{i+1}/{len(companies)}] Re-analyzing {company.symbol} ({self.llm_service.provider})...")
+            llm_result = self.llm_service.analyze_company(company_data, current_prompt)
+            
+            if llm_result and 'score' in llm_result:
+                print(f"  ✅ SUCCESS: {company.symbol} | Score: {llm_result.get('score')} | Rec: {llm_result.get('recommendation')}")
+                company.ai_impact_score = llm_result.get('score')
+                company.recommendation = llm_result.get('recommendation')
+                company.reasoning = llm_result.get('reasoning')
+                company.analysis_json = llm_result
+                
+                # Commit immediately to database after each success
+                session.commit()
+                print(f"  💾 Saved {company.symbol} to database.")
+            else:
+                print(f"  ❌ FAILED: {company.symbol} - No valid result from LLM.")
+            
+            # Rate limiting
+            time.sleep(1)
         
-        # Trier par score d'impact IA (du plus haut au plus bas)
-        results.sort(key=lambda x: x['ai_impact_score'], reverse=True)
-        
-        return results
+        session.close()
+        print("Re-analysis cycle complete.")
 
 def main():
     screener = AIScreener()
-    results = screener.screen_companies()
-    
-    # Sauvegarder les résultats
-    with open('screener_results.json', 'w', encoding='utf-8') as f:
-        json.dump(results, f, indent=2, ensure_ascii=False)
-    
-    print("\nRésultats de l'analyse :")
-    for result in results:
-        print(f"{result['symbol']} ({result['company_name']}): Score IA = {result['ai_impact_score']}")
-    
-    return results
+    screener.update_database()
 
 if __name__ == "__main__":
     main()
