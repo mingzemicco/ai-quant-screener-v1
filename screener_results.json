@@ -1,1 +1,182 @@
-[]
+[
+  {
+    "symbol": "SALESFORCE",
+    "company_name": "SALESFORCE",
+    "sector": "CRM",
+    "current_price": 0,
+    "market_cap": 0,
+    "ai_impact_score": 0,
+    "analysis": {
+      "reasoning": "Aucune donnée disponible pour SALESFORCE via l'API Alpha Vantage",
+      "metrics": {
+        "P/E Ratio": 0,
+        "Market Cap": 0,
+        "ROE": 0,
+        "EPS Growth": 0,
+        "Debt/Equity": 0
+      }
+    }
+  },
+  {
+    "symbol": "ORACLE",
+    "company_name": "ORACLE",
+    "sector": "ERP/Database",
+    "current_price": 0,
+    "market_cap": 0,
+    "ai_impact_score": 0,
+    "analysis": {
+      "reasoning": "Aucune donnée disponible pour ORACLE via l'API Alpha Vantage",
+      "metrics": {
+        "P/E Ratio": 0,
+        "Market Cap": 0,
+        "ROE": 0,
+        "EPS Growth": 0,
+        "Debt/Equity": 0
+      }
+    }
+  },
+  {
+    "symbol": "ADOBE",
+    "company_name": "ADOBE",
+    "sector": "Creative/Creative Cloud",
+    "current_price": 0,
+    "market_cap": 0,
+    "ai_impact_score": 0,
+    "analysis": {
+      "reasoning": "Aucune donnée disponible pour ADOBE via l'API Alpha Vantage",
+      "metrics": {
+        "P/E Ratio": 0,
+        "Market Cap": 0,
+        "ROE": 0,
+        "EPS Growth": 0,
+        "Debt/Equity": 0
+      }
+    }
+  },
+  {
+    "symbol": "WORKDAY",
+    "company_name": "WORKDAY",
+    "sector": "HR Software",
+    "current_price": 0,
+    "market_cap": 0,
+    "ai_impact_score": 0,
+    "analysis": {
+      "reasoning": "Aucune donnée disponible pour WORKDAY via l'API Alpha Vantage",
+      "metrics": {
+        "P/E Ratio": 0,
+        "Market Cap": 0,
+        "ROE": 0,
+        "EPS Growth": 0,
+        "Debt/Equity": 0
+      }
+    }
+  },
+  {
+    "symbol": "SNOWFLAKE",
+    "company_name": "SNOWFLAKE",
+    "sector": "Cloud Data Platform",
+    "current_price": 0,
+    "market_cap": 0,
+    "ai_impact_score": 0,
+    "analysis": {
+      "reasoning": "Aucune donnée disponible pour SNOWFLAKE via l'API Alpha Vantage",
+      "metrics": {
+        "P/E Ratio": 0,
+        "Market Cap": 0,
+        "ROE": 0,
+        "EPS Growth": 0,
+        "Debt/Equity": 0
+      }
+    }
+  },
+  {
+    "symbol": "PALANTIR",
+    "company_name": "PALANTIR",
+    "sector": "Data Analytics",
+    "current_price": 0,
+    "market_cap": 0,
+    "ai_impact_score": 0,
+    "analysis": {
+      "reasoning": "Aucune donnée disponible pour PALANTIR via l'API Alpha Vantage",
+      "metrics": {
+        "P/E Ratio": 0,
+        "Market Cap": 0,
+        "ROE": 0,
+        "EPS Growth": 0,
+        "Debt/Equity": 0
+      }
+    }
+  },
+  {
+    "symbol": "COGNIZANT",
+    "company_name": "COGNIZANT",
+    "sector": "IT Services",
+    "current_price": 0,
+    "market_cap": 0,
+    "ai_impact_score": 0,
+    "analysis": {
+      "reasoning": "Aucune donnée disponible pour COGNIZANT via l'API Alpha Vantage",
+      "metrics": {
+        "P/E Ratio": 0,
+        "Market Cap": 0,
+        "ROE": 0,
+        "EPS Growth": 0,
+        "Debt/Equity": 0
+      }
+    }
+  },
+  {
+    "symbol": "ACCENTURE",
+    "company_name": "ACCENTURE",
+    "sector": "Consulting/IT Services",
+    "current_price": 0,
+    "market_cap": 0,
+    "ai_impact_score": 0,
+    "analysis": {
+      "reasoning": "Aucune donnée disponible pour ACCENTURE via l'API Alpha Vantage",
+      "metrics": {
+        "P/E Ratio": 0,
+        "Market Cap": 0,
+        "ROE": 0,
+        "EPS Growth": 0,
+        "Debt/Equity": 0
+      }
+    }
+  },
+  {
+    "symbol": "INTUIT",
+    "company_name": "INTUIT",
+    "sector": "Accounting Software",
+    "current_price": 0,
+    "market_cap": 0,
+    "ai_impact_score": 0,
+    "analysis": {
+      "reasoning": "Aucune donnée disponible pour INTUIT via l'API Alpha Vantage",
+      "metrics": {
+        "P/E Ratio": 0,
+        "Market Cap": 0,
+        "ROE": 0,
+        "EPS Growth": 0,
+        "Debt/Equity": 0
+      }
+    }
+  },
+  {
+    "symbol": "ANAPLAN",
+    "company_name": "ANAPLAN",
+    "sector": "Business Planning",
+    "current_price": 0,
+    "market_cap": 0,
+    "ai_impact_score": 0,
+    "analysis": {
+      "reasoning": "Aucune donnée disponible pour ANAPLAN via l'API Alpha Vantage",
+      "metrics": {
+        "P/E Ratio": 0,
+        "Market Cap": 0,
+        "ROE": 0,
+        "EPS Growth": 0,
+        "Debt/Equity": 0
+      }
+    }
+  }
+]
