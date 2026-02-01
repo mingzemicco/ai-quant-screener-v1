@@ -268,15 +268,23 @@
 <body>
     <div class="container">
         <header>
-            <h1>AI Quant Screener</h1>
+            <h1>S&P 500 AI Risk Screener</h1>
             <div class="subtitle">Analyse Stratégique : Opportunités (Long) vs Risques (Short)</div>
         </header>
 
         <div class="dashboard">
             <div class="stats">
                 <div class="stat-card">
-                    <div class="stat-value" id="total-companies">0</div>
+                    <div class="stat-value" id="analyzed-count">0</div>
                     <div class="stat-label">Entreprises Analysées</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="total-pool">0</div>
+                    <div class="stat-label">Pool S&P 500</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="completion-rate">0%</div>
+                    <div class="stat-label">Couverture</div>
                 </div>
             </div>
 
@@ -384,7 +392,7 @@
             longContainer.innerHTML = '';
             shortContainer.innerHTML = '';
 
-            document.getElementById('total-companies').textContent = companies.length;
+            // count elements updated by loadStats
 
             // Séparer et trier
             const longList = companies.filter(c => c.ai_impact_score >= 50).sort((a, b) => b.ai_impact_score - a.ai_impact_score); // On prend la moitié supérieure pour l'affichage si pas assez de >70
@@ -402,8 +410,22 @@
             });
         }
 
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+                document.getElementById('analyzed-count').textContent = data.analyzed;
+                document.getElementById('total-pool').textContent = data.total;
+                const rate = data.total > 0 ? Math.round((data.analyzed / data.total) * 100) : 0;
+                document.getElementById('completion-rate').textContent = rate + '%';
+            } catch (error) {
+                console.error('Erreur Stats:', error);
+            }
+        }
+
         async function loadData() {
             try {
+                loadStats(); // Update stats in parallel
                 const response = await fetch('/api/companies');
                 if (!response.ok) throw new Error('Erreur réseau');
                 const data = await response.json();
@@ -473,7 +495,11 @@
             }
         });
 
-        document.addEventListener('DOMContentLoaded', loadData);
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            // Refresh stats every 30s for live feel
+            setInterval(loadStats, 30000);
+        });
     </script>
 </body>
 

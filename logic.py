@@ -4,8 +4,12 @@ import os
 import time
 from datetime import datetime, timedelta
 from typing import Dict, List, Tuple
+from dotenv import load_dotenv
 from database import get_session, CompanyAnalysis
 from llm_service import LLMService
+
+# Load environment variables from .env
+load_dotenv()
 
 class AIScreener:
     def __init__(self):
@@ -43,6 +47,24 @@ class AIScreener:
         except Exception as e:
             print(f"Erreur lors de la récupération des données pour {symbol}: {e}")
             return {}
+
+    def get_stock_quote(self, symbol: str) -> float:
+        """Récupère le prix actuel d'une action via Alpha Vantage GLOBAL_QUOTE"""
+        params = {
+            'function': 'GLOBAL_QUOTE',
+            'symbol': symbol,
+            'apikey': self.api_key
+        }
+        try:
+            response = requests.get(self.base_url, params=params)
+            data = response.json()
+            if "Global Quote" in data:
+                price_str = data["Global Quote"].get("05. price")
+                return self._safe_float(price_str)
+            return 0.0
+        except Exception as e:
+            print(f"Erreur lors de la récupération du prix pour {symbol}: {e}")
+            return 0.0
     
     def _safe_float(self, value):
         if value is None or value == 'None' or value == '-':
@@ -92,7 +114,14 @@ class AIScreener:
 
             # Si on est ici, c'est qu'on a fetched des nouvelles données API
             if company_data:
+                # Fetch price separately since OVERVIEW doesn't have it
+                print(f"Fetching Price for {symbol}...")
+                current_price = self.get_stock_quote(symbol)
+                time.sleep(12) # Wait for another API slot
+
                 print(f"Analyzing {symbol} with LLM...")
+                # Inject correct price into company_data for LLM
+                company_data['Price'] = current_price
                 llm_result = self.llm_service.analyze_company(company_data, current_prompt)
                 
                 if llm_result:
@@ -100,7 +129,7 @@ class AIScreener:
                         'symbol': symbol,
                         'company_name': company_data.get('Name', symbol),
                         'sector': sector_desc,
-                        'current_price': self._safe_float(company_data.get('Price')),
+                        'current_price': current_price,
                         'market_cap': self._safe_float(company_data.get('MarketCapitalization')),
                         'pe_ratio': self._safe_float(company_data.get('PERatio')),
                         'roe': self._safe_float(company_data.get('ReturnOnEquityTTM')),

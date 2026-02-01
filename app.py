@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, request
 import os
+import json
 import threading
 from database import get_session, CompanyAnalysis
 from llm_service import LLMService
@@ -42,6 +43,27 @@ def trigger_reanalysis():
     thread.start()
     
     return jsonify({"status": "started", "message": "Re-analysis started in background."})
+
+@app.route('/api/stats')
+def get_stats():
+    """Endpoint pour récupérer les statistiques globales"""
+    session = get_session()
+    try:
+        db_count = session.query(CompanyAnalysis).count()
+        
+        # Load SP500 count
+        json_path = os.path.join(os.path.dirname(__file__), 'sp500.json')
+        with open(json_path, 'r') as f:
+            all_companies = json.load(f)
+        
+        return jsonify({
+            "analyzed": db_count,
+            "total": len(all_companies)
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        session.close()
 
 @app.route('/api/companies')
 def get_companies():
