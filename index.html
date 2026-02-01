@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Quant Screener</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a2a6c, #2a4d69, #4b86b4);
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(90deg, #1a2a6c, #2a4d69);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .dashboard {
+            padding: 30px;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+            gap: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #1a2a6c;
+        }
+        
+        .stat-label {
+            font-size: 1rem;
+            color: #666;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: linear-gradient(90deg, #1a2a6c, #2a4d69);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .companies-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .company-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            border-left: 5px solid #4b86b4;
+        }
+        
+        .company-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .company-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .company-name {
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        .company-symbol {
+            background: #e6f0ff;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        .ai-score {
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 15px 0;
+            color: #1a2a6c;
+        }
+        
+        .score-bar {
+            height: 20px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        
+        .score-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A, #FFC107, #FF9800, #F44336);
+            border-radius: 10px;
+        }
+        
+        .sector {
+            text-align: center;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .price {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 800px;
+            border-radius: 10px;
+            overflow: hidden;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            background: linear-gradient(90deg, #1a2a6c, #2a4d69);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-body {
+            padding: 30px;
+        }
+        
+        .close-btn {
+            background: #ff6b6b;
+            border: none;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+        
+        .reasoning {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            line-height: 1.8;
+        }
+        
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .metric {
+            background: #e6f0ff;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1a2a6c;
+        }
+        
+        .metric-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .purchase-btn {
+            display: block;
+            width: 100%;
+            background: linear-gradient(90deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .purchase-btn:hover {
+            transform: scale(1.02);
+        }
+        
+        .purchase-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: white;
+            background: rgba(0, 0, 0, 0.3);
+            margin-top: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .companies-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .stat-card {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AI Quant Screener</h1>
+            <div class="subtitle">Analyseur Quantitatif d'Impact de l'IA sur les Entreprises Logicielles</div>
+        </header>
+        
+        <div class="dashboard">
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="total-companies">0</div>
+                    <div class="stat-label">Entreprises Analysées</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="avg-score">0</div>
+                    <div class="stat-label">Score Moyen IA</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="top-score">0</div>
+                    <div class="stat-label">Meilleur Score</div>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <button id="refresh-btn">Actualiser les Données</button>
+                <button id="subscribe-btn">S'abonner pour Accéder aux Rapports Détails</button>
+            </div>
+            
+            <h2 style="text-align: center; margin: 20px 0;">Entreprises Classées par Impact IA</h2>
+            <div class="companies-grid" id="companies-container">
+                <!-- Les cartes des entreprises seront insérées ici dynamiquement -->
+            </div>
+        </div>
+        
+        <footer>
+            <p>AI Quant Screener v1.0 | Analyse basée sur les données du marché en temps quasi-réel</p>
+        </footer>
+    </div>
+    
+    <div class="modal" id="company-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-company-name">Détails de l'Entreprise</h2>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="price" id="modal-price">$0.00</div>
+                <div class="sector" id="modal-sector">Secteur</div>
+                <div class="ai-score" id="modal-score">0/100</div>
+                
+                <h3>Raisonnement de l'IA</h3>
+                <div class="reasoning" id="modal-reasoning">
+                    Les analyses détaillées s'afficheront ici...
+                </div>
+                
+                <h3>Indicateurs Clés</h3>
+                <div class="metrics" id="modal-metrics">
+                    <!-- Les indicateurs seront insérés ici -->
+                </div>
+                
+                <button class="purchase-btn" id="purchase-report-btn" disabled>Acheter le Rapport Détailé ($29.99)</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Données simulées pour la démonstration
+        // Dans une version réelle, ces données viendraient de l'API backend
+        const mockData = [
+            {
+                "symbol": "SALESFORCE",
+                "company_name": "Salesforce Inc.",
+                "sector": "CRM",
+                "current_price": 250.45,
+                "market_cap": 230000000000,
+                "ai_impact_score": 87.5,
+                "analysis": {
+                    "reasoning": "Actif dans l'IA avec Einstein AI; forte croissance des bénéfices (EPS Growth: 25%); bonne rentabilité (ROE: 18%); ratio P/E raisonnable (28.5); grand capitalisation permettant investissements IA",
+                    "metrics": {
+                        "P/E Ratio": 28.5,
+                        "Market Cap": 230000000000,
+                        "ROE": 0.18,
+                        "EPS Growth": 0.25,
+                        "Debt/Equity": 0.35
+                    }
+                }
+            },
+            {
+                "symbol": "ADOBE",
+                "company_name": "Adobe Inc.",
+                "sector": "Creative Cloud",
+                "current_price": 480.20,
+                "market_cap": 220000000000,
+                "ai_impact_score": 92.3,
+                "analysis": {
+                    "reasoning": "Leader dans l'intégration de l'IA dans Creative Cloud avec Firefly; excellente rentabilité (ROE: 22%); croissance soutenue (EPS Growth: 30%); possède des données massives servant de barrière à l'entrée; valorisation adéquate",
+                    "metrics": {
+                        "P/E Ratio": 32.1,
+                        "Market Cap": 220000000000,
+                        "ROE": 0.22,
+                        "EPS Growth": 0.30,
+                        "Debt/Equity": 0.15
+                    }
+                }
+            },
+            {
+                "symbol": "ORACLE",
+                "company_name": "Oracle Corporation",
+                "sector": "ERP/Database",
+                "current_price": 195.80,
+                "market_cap": 280000000000,
+                "ai_impact_score": 78.9,
+                "analysis": {
+                    "reasoning": "Investissements massifs dans l'IA et cloud; bases de données Oracle constituent une barrière à l'entrée; bonnes perspectives de croissance (EPS Growth: 18%); ROE solide (15%); secteur traditionnellement résistant aux disruptions",
+                    "metrics": {
+                        "P/E Ratio": 35.2,
+                        "Market Cap": 280000000000,
+                        "ROE": 0.15,
+                        "EPS Growth": 0.18,
+                        "Debt/Equity": 0.85
+                    }
+                }
+            },
+            {
+                "symbol": "WORKDAY",
+                "company_name": "Workday Inc.",
+                "sector": "HR Software",
+                "current_price": 310.60,
+                "market_cap": 75000000000,
+                "ai_impact_score": 75.4,
+                "analysis": {
+                    "reasoning": "Solution RH leader avec intégration IA croissante; bonnes perspectives dans le cloud RH; ROE solide (14%); mais secteur vulnérable à l'automatisation des tâches RH; valorisation élevée (P/E: 45.2)",
+                    "metrics": {
+                        "P/E Ratio": 45.2,
+                        "Market Cap": 75000000000,
+                        "ROE": 0.14,
+                        "EPS Growth": 0.20,
+                        "Debt/Equity": 0.10
+                    }
+                }
+            },
+            {
+                "symbol": "SNOWFLAKE",
+                "company_name": "Snowflake Inc.",
+                "sector": "Cloud Data Platform",
+                "current_price": 280.50,
+                "market_cap": 85000000000,
+                "ai_impact_score": 85.7,
+                "analysis": {
+                    "reasoning": "Plateforme de données cloud avec forte barrière à l'entrée; données constituent actif stratégique pour l'IA; forte croissance (EPS Growth: 35%); excellent positionnement pour l'ère de l'IA; mais valorisation élevée (P/E: 58.7)",
+                    "metrics": {
+                        "P/E Ratio": 58.7,
+                        "Market Cap": 85000000000,
+                        "ROE": 0.12,
+                        "EPS Growth": 0.35,
+                        "Debt/Equity": 0.05
+                    }
+                }
+            },
+            {
+                "symbol": "PALANTIR",
+                "company_name": "Palantir Technologies",
+                "sector": "Data Analytics",
+                "current_price": 18.90,
+                "market_cap": 40000000000,
+                "ai_impact_score": 80.2,
+                "analysis": {
+                    "reasoning": "Spécialiste de l'analyse de données pour gouvernement et entreprises; position unique dans l'analyse sémantique et IA; barrière à l'entrée élevée; mais valorisation incertaine; EPS Growth limité",
+                    "metrics": {
+                        "P/E Ratio": 0, // Pas de profit
+                        "Market Cap": 40000000000,
+                        "ROE": -0.05, // Perte
+                        "EPS Growth": 0.05,
+                        "Debt/Equity": 0.02
+                    }
+                }
+            }
+        ];
+
+        // Fonction pour formater les grands nombres
+        function formatNumber(num) {
+            if (num >= 1000000000) {
+                return '$' + (num / 1000000000).toFixed(2) + 'B';
+            } else if (num >= 1000000) {
+                return '$' + (num / 1000000).toFixed(2) + 'M';
+            } else {
+                return '$' + num.toFixed(2);
+            }
+        }
+
+        // Fonction pour afficher les entreprises
+        function displayCompanies(companies) {
+            const container = document.getElementById('companies-container');
+            container.innerHTML = '';
+
+            // Mettre à jour les statistiques
+            document.getElementById('total-companies').textContent = companies.length;
+            
+            const avgScore = companies.reduce((sum, comp) => sum + comp.ai_impact_score, 0) / companies.length;
+            document.getElementById('avg-score').textContent = avgScore.toFixed(1);
+            
+            const topScore = Math.max(...companies.map(comp => comp.ai_impact_score));
+            document.getElementById('top-score').textContent = topScore.toFixed(1);
+
+            companies.forEach(company => {
+                const card = document.createElement('div');
+                card.className = 'company-card';
+                card.innerHTML = `
+                    <div class="company-header">
+                        <div class="company-name">${company.company_name}</div>
+                        <div class="company-symbol">${company.symbol}</div>
+                    </div>
+                    <div class="sector">${company.sector}</div>
+                    <div class="price">$${company.current_price.toFixed(2)}</div>
+                    <div class="ai-score">${company.ai_impact_score}/100</div>
+                    <div class="score-bar">
+                        <div class="score-fill" style="width: ${company.ai_impact_score}%"></div>
+                    </div>
+                `;
+                
+                card.addEventListener('click', () => showCompanyDetails(company));
+                container.appendChild(card);
+            });
+        }
+
+        // Fonction pour afficher les détails d'une entreprise
+        function showCompanyDetails(company) {
+            document.getElementById('modal-company-name').textContent = `${company.company_name} (${company.symbol})`;
+            document.getElementById('modal-price').textContent = `$${company.current_price.toFixed(2)} | Cap. ${formatNumber(company.market_cap)}`;
+            document.getElementById('modal-sector').textContent = company.sector;
+            document.getElementById('modal-score').textContent = `${company.ai_impact_score}/100`;
+            document.getElementById('modal-reasoning').textContent = company.analysis.reasoning;
+
+            // Afficher les métriques
+            const metricsContainer = document.getElementById('modal-metrics');
+            metricsContainer.innerHTML = '';
+            
+            for (const [key, value] of Object.entries(company.analysis.metrics)) {
+                const metricDiv = document.createElement('div');
+                metricDiv.className = 'metric';
+                
+                let formattedValue = value;
+                if (key === 'Market Cap') {
+                    formattedValue = formatNumber(value);
+                } else if (key === 'ROE' || key === 'EPS Growth') {
+                    formattedValue = (value * 100).toFixed(2) + '%';
+                } else if (typeof value === 'number') {
+                    formattedValue = value.toFixed(2);
+                }
+                
+                metricDiv.innerHTML = `
+                    <div class="metric-value">${formattedValue}</div>
+                    <div class="metric-label">${key}</div>
+                `;
+                metricsContainer.appendChild(metricDiv);
+            }
+
+            document.getElementById('company-modal').style.display = 'flex';
+        }
+
+        // Fonction pour fermer le modal
+        function closeModals() {
+            document.getElementById('company-modal').style.display = 'none';
+        }
+
+        // Événements
+        document.getElementById('refresh-btn').addEventListener('click', () => {
+            alert('Dans une version réelle, cette fonction actualiserait les données depuis le backend.');
+        });
+
+        document.getElementById('subscribe-btn').addEventListener('click', () => {
+            alert('Merci de votre intérêt ! Contactez-nous pour un abonnement complet aux rapports détaillés.');
+        });
+
+        document.querySelector('.close-btn').addEventListener('click', closeModals);
+        document.getElementById('company-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'company-modal') {
+                closeModals();
+            }
+        });
+
+        // Désactiver le bouton d'achat dans la démo
+        document.getElementById('purchase-report-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            alert('Fonctionnalité de paiement disponible dans la version complète avec intégration Stripe.');
+        });
+
+        // Charger les données au chargement de la page
+        document.addEventListener('DOMContentLoaded', () => {
+            displayCompanies(mockData);
+        });
+    </script>
+</body>
+</html>
