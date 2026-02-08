@@ -363,32 +363,48 @@ def eurusd_page():
             function displayModelResults(result) {
                 document.getElementById('modelResults').style.display = 'block';
                 
+                // Fonction utilitaire pour formater les nombres de manière sécurisée
+                function safeToFixed(value, digits = 3) {
+                    if (value === undefined || value === null) {
+                        return 'N/A';
+                    }
+                    return Number(value).toFixed(digits);
+                }
+                
+                // Fonction utilitaire pour gérer les objets potentiellement undefined
+                function safeGet(obj, prop, defaultValue = '') {
+                    if (obj && obj[prop] !== undefined) {
+                        return obj[prop];
+                    }
+                    return defaultValue;
+                }
+                
                 // Format metrics display
                 const metricsHtml = `
                     <table style="width: 100%; border-collapse: collapse;">
                         <tr>
                             <td style="border: 1px solid #ddd; padding: 8px;"><strong>Accuracy:</strong></td>
-                            <td style="border: 1px solid #ddd; padding: 8px;">${result.accuracy.toFixed(3)}</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">${safeToFixed(result.accuracy)}</td>
                             <td style="border: 1px solid #ddd; padding: 8px;">Ratio de prédictions correctes</td>
                         </tr>
                         <tr>
                             <td style="border: 1px solid #ddd; padding: 8px;"><strong>Precision:</strong></td>
-                            <td style="border: 1px solid #ddd; padding: 8px;">${result.precision.toFixed(3)}</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">${safeToFixed(result.precision)}</td>
                             <td style="border: 1px solid #ddd; padding: 8px;">Fiabilité des signaux haussiers</td>
                         </tr>
                         <tr>
                             <td style="border: 1px solid #ddd; padding: 8px;"><strong>Recall:</strong></td>
-                            <td style="border: 1px solid #ddd; padding: 8px;">${result.recall.toFixed(3)}</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">${safeToFixed(result.recall)}</td>
                             <td style="border: 1px solid #ddd; padding: 8px;">Capacité à capturer les mouvements haussiers</td>
                         </tr>
                         <tr>
                             <td style="border: 1px solid #ddd; padding: 8px;"><strong>F1-Score:</strong></td>
-                            <td style="border: 1px solid #ddd; padding: 8px;">${result.f1_score.toFixed(3)}</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">${safeToFixed(result.f1_score)}</td>
                             <td style="border: 1px solid #ddd; padding: 8px;">Équilibre entre précision et rappel</td>
                         </tr>
                         <tr>
                             <td style="border: 1px solid #ddd; padding: 8px;"><strong>AUC-ROC:</strong></td>
-                            <td style="border: 1px solid #ddd; padding: 8px;">${result.auc_roc.toFixed(3)}</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">${safeToFixed(result.auc_roc)}</td>
                             <td style="border: 1px solid #ddd; padding: 8px;">Capacité de discrimination</td>
                         </tr>
                     </table>
@@ -396,34 +412,38 @@ def eurusd_page():
                 
                 document.getElementById('metricsDisplay').innerHTML = metricsHtml;
                 
-                // Display interpretation
+                // Display interpretation with safety checks
                 let interpretationHtml = '';
                 
-                // Model quality
-                interpretationHtml += `<div class="interpretation"><h4>Performance Assessment</h4><p>${result.interpretation.performance_assessment}</p>`;
+                // Model quality and performance assessment
+                const perfAssessment = safeGet(result.interpretation, 'performance_assessment', 'Performance assessment not available');
+                interpretationHtml += `<div class="interpretation"><h4>Performance Assessment</h4><p>${perfAssessment}</p>`;
                 
                 // Risk factors
-                if (result.interpretation.risk_factors && result.interpretation.risk_factors.length > 0) {
+                const riskFactors = safeGet(result.interpretation, 'risk_factors', []);
+                if (riskFactors && riskFactors.length > 0) {
                     interpretationHtml += `<div class="risk-factors"><h4>Risk Factors</h4><ul>`;
-                    result.interpretation.risk_factors.forEach(factor => {
+                    riskFactors.forEach(factor => {
                         interpretationHtml += `<li>${factor}</li>`;
                     });
                     interpretationHtml += `</ul></div>`;
                 }
                 
                 // Recommendations
-                if (result.interpretation.recommendations && result.interpretation.recommendations.length > 0) {
+                const recommendations = safeGet(result.interpretation, 'recommendations', []);
+                if (recommendations && recommendations.length > 0) {
                     interpretationHtml += `<div class="recommendations"><h4>Recommendations</h4><ul>`;
-                    result.interpretation.recommendations.forEach(rec => {
+                    recommendations.forEach(rec => {
                         interpretationHtml += `<li>${rec}</li>`;
                     });
                     interpretationHtml += `</ul></div>`;
                 }
                 
                 // Robustness indicators
-                if (result.interpretation.robustness_indicators && result.interpretation.robustness_indicators.length > 0) {
+                const robustnessIndicators = safeGet(result.interpretation, 'robustness_indicators', []);
+                if (robustnessIndicators && robustnessIndicators.length > 0) {
                     interpretationHtml += `<div class="robustness"><h4>Robustness Indicators</h4><ul>`;
-                    result.interpretation.robustness_indicators.forEach(indicator => {
+                    robustnessIndicators.forEach(indicator => {
                         interpretationHtml += `<li>${indicator}</li>`;
                     });
                     interpretationHtml += `</ul></div>`;
