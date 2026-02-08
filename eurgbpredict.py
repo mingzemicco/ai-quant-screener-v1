@@ -284,7 +284,7 @@ class EurUsdPredictor:
         # Interprétation des résultats
         interpretation = self.interpret_results(accuracy, precision, recall, f1, auc, len(test_data))
         
-        return {
+        result = {
             'model': self.model,
             'train_data': train_data,
             'test_data': test_data,
@@ -295,6 +295,13 @@ class EurUsdPredictor:
             'auc_roc': auc,
             'interpretation': interpretation
         }
+        
+        # Vérifier que l'interprétation est correctement formée
+        if not isinstance(interpretation, dict):
+            print(f"Erreur: l'interprétation n'est pas un dictionnaire: {type(interpretation)}")
+            print(f"Valeur: {interpretation}")
+        
+        return result
     
     def plot_market_regimes(self, regime_bull_threshold=0.02, regime_bear_threshold=-0.02, regime_volatility_threshold=None):
         """
