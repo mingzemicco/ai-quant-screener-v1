@@ -6,3 +6,8 @@ sqlalchemy
 openai
 google-generativeai
 python-dotenv
+pandas
+numpy
+plotly
+lightgbm
+scikit-learn
