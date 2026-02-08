@@ -185,10 +185,18 @@ class EurUsdPredictor:
         
         return df, feature_columns
     
-    def train_model(self, regime_bull_threshold=0.02, regime_bear_threshold=-0.02, regime_volatility_threshold=None):
+    def train_model(self, regime_bull_threshold=0.02, regime_bear_threshold=-0.02, regime_volatility_threshold=None, force_reload=False):
         """
         Entraîner le modèle LightGBM
         """
+        if self.data is None or force_reload:
+            print("Aucune donnée disponible ou rechargement forcé. Récupération des données...")
+            # Récupérer les données avec les paramètres de seuil
+            self.get_eurusd_futures_data()
+            # Identifier les régimes avec les paramètres fournis
+            if self.data is not None:
+                self.data = self.identify_regimes(self.data, regime_bull_threshold, regime_bear_threshold, regime_volatility_threshold)
+        
         if self.data is None:
             print("Aucune donnée disponible. Veuillez d'abord récupérer les données.")
             return

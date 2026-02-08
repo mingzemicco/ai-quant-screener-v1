@@ -361,6 +361,9 @@ def get_eurusd_data():
         # Identifier les régimes
         data = predictor.identify_regimes(data, bull_threshold, bear_threshold, vol_threshold)
         
+        # Stocker les données dans l'instance pour une utilisation ultérieure
+        predictor.data = data
+        
         # Retourner les données formatées
         result = {
             "dates": data.index.strftime('%Y-%m-%d').tolist(),
@@ -387,7 +390,8 @@ def train_eurusd_model():
         vol_threshold = data.get('vol_threshold')
         
         predictor = EurUsdPredictor()
-        results = predictor.train_model(bull_threshold, bear_threshold, vol_threshold)
+        # Forcer le rechargement des données avec les paramètres spécifiés
+        results = predictor.train_model(bull_threshold, bear_threshold, vol_threshold, force_reload=True)
         
         return jsonify({
             "status": "success",
