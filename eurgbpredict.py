@@ -187,19 +187,24 @@ class EurUsdPredictor:
     
     def train_model(self, regime_bull_threshold=0.02, regime_bear_threshold=-0.02, regime_volatility_threshold=None, force_reload=False):
         """
-        Entraîner le modèle LightGBM
+        Entraîner le modèle LightGBM avec des retours détaillés
         """
+        print("Démarrage de l'entraînement du modèle...")
+        
         if self.data is None or force_reload:
             print("Aucune donnée disponible ou rechargement forcé. Récupération des données...")
             # Récupérer les données avec les paramètres de seuil
             self.get_eurusd_futures_data()
             # Identifier les régimes avec les paramètres fournis
             if self.data is not None:
+                print("Identification des régimes de marché...")
                 self.data = self.identify_regimes(self.data, regime_bull_threshold, regime_bear_threshold, regime_volatility_threshold)
         
         if self.data is None:
             print("Aucune donnée disponible. Veuillez d'abord récupérer les données.")
             return
+        
+        print("Préparation des features pour le modèle...")
         
         # Préparer les données
         df, feature_cols = self.prepare_features(
@@ -222,10 +227,14 @@ class EurUsdPredictor:
         X_test = test_data[feature_cols]
         y_test = test_data['target']
         
+        print(f"Nombre de features: {len(feature_cols)}")
+        print(f"Distribution des classes dans l'entraînement - Haussier: {(y_train==1).sum()}, Baissier: {(y_train==0).sum()}")
+        print(f"Distribution des classes dans le test - Haussier: {(y_test==1).sum()}, Baissier: {(y_test==0).sum()}")
+        
         # Entraîner le modèle LightGBM
         params = {
             'objective': 'binary',
-            'metric': 'binary_logloss',
+            'metric': 'binary_logloss,auc',
             'boosting_type': 'gbdt',
             'num_leaves': 31,
             'learning_rate': 0.05,
@@ -238,12 +247,13 @@ class EurUsdPredictor:
         train_dataset = lgb.Dataset(X_train, label=y_train)
         test_dataset = lgb.Dataset(X_test, label=y_test, reference=train_dataset)
         
+        print("Entraînement du modèle en cours...")
         self.model = lgb.train(
             params,
             train_dataset,
             valid_sets=[test_dataset],
             num_boost_round=100,
-            callbacks=[lgb.early_stopping(stopping_rounds=10), lgb.log_evaluation(0)]
+            callbacks=[lgb.early_stopping(stopping_rounds=10), lgb.log_evaluation(20)]
         )
         
         # Stocker les données d'entraînement et de test
@@ -259,10 +269,20 @@ class EurUsdPredictor:
         precision = precision_score(y_test, y_pred_binary, zero_division=0)
         recall = recall_score(y_test, y_pred_binary, zero_division=0)
         
+        # Calculer des métriques supplémentaires
+        from sklearn.metrics import f1_score, roc_auc_score
+        f1 = f1_score(y_test, y_pred_binary)
+        auc = roc_auc_score(y_test, y_pred)
+        
         print(f"\nRésultats du modèle:")
-        print(f"Précision: {accuracy:.3f}")
+        print(f"Accuracy: {accuracy:.3f}")
         print(f"Precision: {precision:.3f}")
         print(f"Recall: {recall:.3f}")
+        print(f"F1-Score: {f1:.3f}")
+        print(f"AUC-ROC: {auc:.3f}")
+        
+        # Interprétation des résultats
+        interpretation = self.interpret_results(accuracy, precision, recall, f1, auc, len(test_data))
         
         return {
             'model': self.model,
@@ -270,7 +290,10 @@ class EurUsdPredictor:
             'test_data': test_data,
             'accuracy': accuracy,
             'precision': precision,
-            'recall': recall
+            'recall': recall,
+            'f1_score': f1,
+            'auc_roc': auc,
+            'interpretation': interpretation
         }
     
     def plot_market_regimes(self, regime_bull_threshold=0.02, regime_bear_threshold=-0.02, regime_volatility_threshold=None):
@@ -356,6 +379,69 @@ class EurUsdPredictor:
         fig.update_yaxes(title_text="Régime", row=3, col=1)
         
         return fig
+    
+    def interpret_results(self, accuracy, precision, recall, f1, auc, test_size):
+        """
+        Interpréter les résultats du modèle selon les standards d'un hedge fund professionnel
+        """
+        interpretation = {
+            'model_quality': '',
+            'performance_assessment': '',
+            'risk_factors': [],
+            'recommendations': [],
+            'robustness_indicators': []
+        }
+        
+        # Évaluer la qualité générale du modèle
+        if accuracy > 0.65:
+            interpretation['model_quality'] = 'Modèle prometteur'
+        elif accuracy > 0.55:
+            interpretation['model_quality'] = 'Modèle marginal'
+        else:
+            interpretation['model_quality'] = 'Modèle faible'
+        
+        # Évaluation précise des performances
+        interpretation['performance_assessment'] = f"""
+        Performance Générale: L'accuracy de {accuracy:.3f} indique la capacité du modèle à prédire correctement la direction.
+        La précision de {precision:.3f} montre la fiabilité des signaux haussiers.
+        Le recall de {recall:.3f} indique la capacité à capturer les mouvements haussiers.
+        Le F1-Score de {f1:.3f} équilibre précision et rappel.
+        L'AUC-ROC de {auc:.3f} mesure la séparation des classes.
+        """
+        
+        # Facteurs de risque
+        if test_size < 250:  # Moins d'un an de données de test à 5 jours/semaine
+            interpretation['risk_factors'].append("Petit échantillon de test - risque de surajustement")
+        
+        if abs(precision - recall) > 0.2:
+            interpretation['risk_factors'].append("Déséquilibre entre précision et rappel - modèle potentiellement biaisé")
+        
+        if auc < 0.6:
+            interpretation['risk_factors'].append("Faible capacité de discrimination - modèle peu fiable")
+        
+        # Recommandations
+        if accuracy < 0.55:
+            interpretation['recommendations'].append("Considérer une révision complète de la stratégie de features")
+        elif accuracy < 0.65:
+            interpretation['recommendations'].append("Explorer des méthodes d'ensemble ou des ajustements de seuil")
+        
+        if precision < 0.6:
+            interpretation['recommendations'].append("Ajuster le seuil de décision pour améliorer la précision")
+        
+        if recall < 0.6:
+            interpretation['recommendations'].append("Améliorer la capture des signaux haussiers avec des features supplémentaires")
+        
+        # Indicateurs de robustesse
+        if auc > 0.7:
+            interpretation['robustness_indicators'].append("Bonne capacité de discrimination (AUC > 0.7)")
+        
+        if f1 > 0.6:
+            interpretation['robustness_indicators'].append("Bon équilibre entre précision et rappel (F1 > 0.6)")
+        
+        if len(interpretation['risk_factors']) == 0:
+            interpretation['robustness_indicators'].append("Pas de risques majeurs identifiés dans l'évaluation")
+        
+        return interpretation
     
     def predict_next_movement(self):
         """

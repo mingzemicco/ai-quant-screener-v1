@@ -11,3 +11,4 @@ numpy
 plotly
 lightgbm
 scikit-learn
+urllib3

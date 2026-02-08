@@ -183,25 +183,35 @@ def eurusd_page():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>EUR/USD Prediction Dashboard</title>
+        <title>EUR/USD Prediction Dashboard - Professional Hedge Fund Grade</title>
         <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
         <style>
             body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
-            .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+            .container { max-width: 1400px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
             .controls { margin: 20px 0; padding: 15px; background: #f9f9f9; border-radius: 5px; }
             .control-group { margin: 10px 0; }
             label { display: inline-block; width: 200px; }
             input { padding: 5px; margin: 5px; width: 100px; }
             button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
             button:hover { background: #0056b3; }
+            button:disabled { background: #cccccc; cursor: not-allowed; }
             .results { margin-top: 20px; }
             #chart { width: 100%; height: 600px; }
+            .loading { display: none; text-align: center; padding: 20px; }
+            .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; width: 40px; height: 40px; animation: spin 2s linear infinite; margin: 0 auto; }
+            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+            .training-progress { margin: 10px 0; padding: 10px; background: #e7f3ff; border-radius: 4px; display: none; }
+            .model-results { margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 5px; display: none; }
+            .interpretation { margin-top: 15px; padding: 10px; background: #fff8dc; border-left: 4px solid #ffa500; border-radius: 4px; }
+            .risk-factors { margin-top: 10px; padding: 10px; background: #ffe6e6; border-left: 4px solid #ff0000; border-radius: 4px; }
+            .recommendations { margin-top: 10px; padding: 10px; background: #e6ffe6; border-left: 4px solid #00aa00; border-radius: 4px; }
+            .robustness { margin-top: 10px; padding: 10px; background: #f0f0ff; border-left: 4px solid #6666ff; border-radius: 4px; }
         </style>
     </head>
     <body>
         <div class="container">
-            <h1>EUR/USD Prediction Dashboard</h1>
-            <p>This dashboard predicts EUR/USD movements using futures data and carry factors.</p>
+            <h1>EUR/USD Prediction Dashboard - Professional Grade</h1>
+            <p>This dashboard predicts EUR/USD movements using futures data and carry factors. Professional-grade analysis for hedge fund applications.</p>
             
             <div class="controls">
                 <h3>Market Regime Parameters</h3>
@@ -218,13 +228,29 @@ def eurusd_page():
                     <input type="number" id="volThreshold" value="" placeholder="Auto calculated">
                 </div>
                 <button onclick="fetchEurUsdData()">Fetch & Analyze Data</button>
-                <button onclick="trainModel()">Train Model</button>
+                <button id="trainBtn" onclick="trainModel()">Train Model</button>
                 <button onclick="predictNext()">Predict Next Movement</button>
+            </div>
+            
+            <div class="loading" id="loadingDiv">
+                <div class="spinner"></div>
+                <p id="loadingText">Initializing...</p>
+            </div>
+            
+            <div class="training-progress" id="progressDiv">
+                <p id="progressText">Training progress will appear here...</p>
             </div>
             
             <div class="results">
                 <h3>Market Regime Visualization</h3>
                 <div id="chart"></div>
+                
+                <div class="model-results" id="modelResults">
+                    <h3>Model Performance Metrics</h3>
+                    <div id="metricsDisplay"></div>
+                    <div id="interpretationSection"></div>
+                </div>
+                
                 <div id="predictionResult"></div>
             </div>
         </div>
@@ -233,6 +259,8 @@ def eurusd_page():
             let chartData = null;
             
             async function fetchEurUsdData() {
+                showLoading(true, 'Fetching EUR/USD data...');
+                
                 const params = {
                     bull_threshold: parseFloat(document.getElementById('bullThreshold').value) / 100,
                     bear_threshold: parseFloat(document.getElementById('bearThreshold').value) / 100
@@ -255,9 +283,11 @@ def eurusd_page():
                     
                     chartData = data;
                     plotChart(data);
+                    showLoading(false);
                 } catch (error) {
                     console.error('Error fetching EUR/USD data:', error);
                     alert('Error fetching data: ' + error.message);
+                    showLoading(false);
                 }
             }
             
@@ -289,6 +319,11 @@ def eurusd_page():
                     return;
                 }
                 
+                // Disable button and show loading
+                document.getElementById('trainBtn').disabled = true;
+                showLoading(true, 'Starting model training...');
+                showProgress(true, 'Initializing training pipeline...');
+                
                 try {
                     const response = await fetch('/api/eurusd/train', {
                         method: 'POST',
@@ -298,18 +333,105 @@ def eurusd_page():
                             bear_threshold: parseFloat(document.getElementById('bearThreshold').value) / 100
                         })
                     });
+                    
                     const result = await response.json();
                     
                     if (result.error) {
                         alert('Training error: ' + result.error);
+                        showLoading(false);
+                        showProgress(false);
+                        document.getElementById('trainBtn').disabled = false;
                         return;
                     }
                     
-                    alert(`Model trained successfully!\\nAccuracy: ${result.accuracy.toFixed(3)}\\nPrecision: ${result.precision.toFixed(3)}\\nRecall: ${result.recall.toFixed(3)}`);
+                    // Display detailed results
+                    displayModelResults(result);
+                    
+                    showLoading(false);
+                    showProgress(false);
+                    document.getElementById('trainBtn').disabled = false;
+                    
                 } catch (error) {
                     console.error('Error training model:', error);
                     alert('Error training model: ' + error.message);
+                    showLoading(false);
+                    showProgress(false);
+                    document.getElementById('trainBtn').disabled = false;
                 }
+            }
+            
+            function displayModelResults(result) {
+                document.getElementById('modelResults').style.display = 'block';
+                
+                // Format metrics display
+                const metricsHtml = `
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 8px;"><strong>Accuracy:</strong></td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">${result.accuracy.toFixed(3)}</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">Ratio de prédictions correctes</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 8px;"><strong>Precision:</strong></td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">${result.precision.toFixed(3)}</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">Fiabilité des signaux haussiers</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 8px;"><strong>Recall:</strong></td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">${result.recall.toFixed(3)}</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">Capacité à capturer les mouvements haussiers</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 8px;"><strong>F1-Score:</strong></td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">${result.f1_score.toFixed(3)}</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">Équilibre entre précision et rappel</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #ddd; padding: 8px;"><strong>AUC-ROC:</strong></td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">${result.auc_roc.toFixed(3)}</td>
+                            <td style="border: 1px solid #ddd; padding: 8px;">Capacité de discrimination</td>
+                        </tr>
+                    </table>
+                `;
+                
+                document.getElementById('metricsDisplay').innerHTML = metricsHtml;
+                
+                // Display interpretation
+                let interpretationHtml = '';
+                
+                // Model quality
+                interpretationHtml += `<div class="interpretation"><h4>Performance Assessment</h4><p>${result.interpretation.performance_assessment}</p>`;
+                
+                // Risk factors
+                if (result.interpretation.risk_factors && result.interpretation.risk_factors.length > 0) {
+                    interpretationHtml += `<div class="risk-factors"><h4>Risk Factors</h4><ul>`;
+                    result.interpretation.risk_factors.forEach(factor => {
+                        interpretationHtml += `<li>${factor}</li>`;
+                    });
+                    interpretationHtml += `</ul></div>`;
+                }
+                
+                // Recommendations
+                if (result.interpretation.recommendations && result.interpretation.recommendations.length > 0) {
+                    interpretationHtml += `<div class="recommendations"><h4>Recommendations</h4><ul>`;
+                    result.interpretation.recommendations.forEach(rec => {
+                        interpretationHtml += `<li>${rec}</li>`;
+                    });
+                    interpretationHtml += `</ul></div>`;
+                }
+                
+                // Robustness indicators
+                if (result.interpretation.robustness_indicators && result.interpretation.robustness_indicators.length > 0) {
+                    interpretationHtml += `<div class="robustness"><h4>Robustness Indicators</h4><ul>`;
+                    result.interpretation.robustness_indicators.forEach(indicator => {
+                        interpretationHtml += `<li>${indicator}</li>`;
+                    });
+                    interpretationHtml += `</ul></div>`;
+                }
+                
+                interpretationHtml += `</div>`;
+                
+                document.getElementById('interpretationSection').innerHTML = interpretationHtml;
             }
             
             async function predictNext() {
@@ -331,6 +453,41 @@ def eurusd_page():
                     alert('Error making prediction: ' + error.message);
                 }
             }
+            
+            function showLoading(show, message = '') {
+                const loadingDiv = document.getElementById('loadingDiv');
+                const loadingText = document.getElementById('loadingText');
+                
+                if (show) {
+                    loadingText.textContent = message || 'Processing...';
+                    loadingDiv.style.display = 'block';
+                } else {
+                    loadingDiv.style.display = 'none';
+                }
+            }
+            
+            function showProgress(show, message = '') {
+                const progressDiv = document.getElementById('progressDiv');
+                const progressText = document.getElementById('progressText');
+                
+                if (show) {
+                    progressText.textContent = message;
+                    progressDiv.style.display = 'block';
+                } else {
+                    progressDiv.style.display = 'none';
+                }
+            }
+            
+            // Auto-verify deployment after 5 minutes
+            setTimeout(async function() {
+                try {
+                    const response = await fetch('/api/verify_deployment');
+                    const result = await response.json();
+                    console.log('Deployment verification result:', result);
+                } catch (error) {
+                    console.error('Error verifying deployment:', error);
+                }
+            }, 300000); // 5 minutes = 300000 ms
         </script>
     </body>
     </html>
@@ -425,6 +582,40 @@ def predict_eurusd():
             return jsonify({"error": "Could not fetch data for prediction"}), 500
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/verify_deployment')
+@login_required
+def verify_deployment():
+    """Endpoint pour vérifier le déploiement sur Railway"""
+    try:
+        import subprocess
+        import sys
+        
+        # Récupérer l'URL du site courant
+        from urllib.parse import urlparse
+        host_url = request.host_url  # Cela donne l'URL complète avec http://
+        
+        # Pour un déploiement Railway, vérifier que le site répond
+        import requests
+        response = requests.get(host_url, timeout=10)
+        
+        return jsonify({
+            "status": "success",
+            "deployment_url": host_url,
+            "status_code": response.status_code,
+            "timestamp": datetime.now().isoformat(),
+            "message": f"Déploiement vérifié avec succès - Status: {response.status_code}"
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "error": str(e),
+            "timestamp": datetime.now().isoformat(),
+            "message": "Erreur lors de la vérification du déploiement"
+        }), 500
+
+# Import pour la vérification de déploiement
+from datetime import datetime
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
