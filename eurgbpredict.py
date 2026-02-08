@@ -65,8 +65,16 @@ class EurUsdPredictor:
             df.index = pd.to_datetime(df.index)
             df = df.sort_index()
             
-            # Renommer les colonnes
-            df.columns = ['open', 'high', 'low', 'close', 'adjusted_close']
+            # Renommer les colonnes - vérifier le nombre exact de colonnes
+            columns = list(df.columns)
+            if len(columns) == 5:
+                df.columns = ['open', 'high', 'low', 'close', 'adjusted_close']
+            elif len(columns) == 4:  # Si 'adjusted_close' n'est pas présent
+                df.columns = ['open', 'high', 'low', 'close']
+            else:
+                # Garder les noms originaux si différent
+                pass
+            
             df = df.astype(float)
             
             # Calculer les prix forward en incluant le carry (approximation)
