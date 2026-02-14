@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, session, redirect, url_for
+from flask import Flask, jsonify, request, session, redirect, url_for, render_template_string
 import os
 import json
 import threading
@@ -7,9 +7,12 @@ from werkzeug.security import check_password_hash
 from database import get_session, CompanyAnalysis, User
 from llm_service import LLMService
 from logic import AIScreener
+import markdown
+import frontmatter
+from datetime import datetime
 
 # Version mise à jour pour Railway deployment
-APP_VERSION = "3.0.0"
+APP_VERSION = "3.1.0"
 
 # Import pour la prédiction EUR/USD
 try:
@@ -21,6 +24,9 @@ except ImportError:
 app = Flask(__name__)
 app.secret_key = "ai_quant_screener_secret_ultra_key" # In production, use env variable
 llm_service = LLMService()
+
+# Blog content directory
+BLOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'content', 'blog')
 
 def login_required(f):
     @wraps(f)
@@ -79,6 +85,80 @@ def index():
     filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'index.html')
     with open(filepath, 'r', encoding='utf-8') as f:
         return f.read()
+
+# --- BLOG ROUTES ---
+
+@app.route('/blog')
+def blog_index():
+    posts = []
+    if os.path.exists(BLOG_DIR):
+        for filename in os.listdir(BLOG_DIR):
+            if filename.endswith('.md'):
+                filepath = os.path.join(BLOG_DIR, filename)
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    post = frontmatter.load(f)
+                    
+                    # Extract date from filename if not in frontmatter
+                    # Format: YYYY-MM-DD-slug.md
+                    slug = filename.replace('.md', '')
+                    date_str = str(post.get('date', ''))
+                    
+                    if not date_str and len(filename) > 10:
+                         try:
+                             date_part = filename[:10]
+                             datetime.strptime(date_part, '%Y-%m-%d')
+                             date_str = date_part
+                         except:
+                             date_str = datetime.now().strftime('%Y-%m-%d')
+
+                    posts.append({
+                        'title': post.get('title', 'Untitled'),
+                        'date': date_str,
+                        'category': post.get('category', 'Analysis'),
+                        'description': post.get('description', ''),
+                        'tags': post.get('tags', []),
+                        'slug': slug
+                    })
+    
+    # Sort by date descending
+    posts.sort(key=lambda x: x['date'], reverse=True)
+    
+    template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'blog.html')
+    with open(template_path, 'r', encoding='utf-8') as f:
+        return render_template_string(f.read(), posts=posts)
+
+@app.route('/blog/<path:slug>')
+def blog_post(slug):
+    # Security check to prevent directory traversal
+    if '..' in slug or slug.startswith('/'):
+        return "Invalid path", 400
+        
+    filename = f"{slug}.md"
+    filepath = os.path.join(BLOG_DIR, filename)
+    
+    if not os.path.exists(filepath):
+        # Try to find file that matches the slug (ignoring date prefix if user provided just slug)
+        # But here we assume slug is the full filename without extension as generated in list
+        return "Post not found", 404
+        
+    with open(filepath, 'r', encoding='utf-8') as f:
+        post_obj = frontmatter.load(f)
+        html_content = markdown.markdown(post_obj.content, extensions=['fenced_code', 'tables'])
+        
+        post_data = {
+            'title': post_obj.get('title', 'Untitled'),
+            'date': post_obj.get('date', datetime.now().strftime('%Y-%m-%d')),
+            'author': post_obj.get('author', 'AI Quant'),
+            'category': post_obj.get('category', 'Analysis'),
+            'content': html_content,
+            'tags': post_obj.get('tags', [])
+        }
+        
+    template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'blog_post.html')
+    with open(template_path, 'r', encoding='utf-8') as f:
+        return render_template_string(f.read(), post=post_data)
+
+# --- END BLOG ROUTES ---
 
 @app.route('/api/prompt', methods=['GET'])
 def get_prompt():
@@ -177,7 +257,7 @@ def run_analysis():
 @login_required
 def eurusd_page():
     """Page pour la prédiction EUR/USD"""
-    html_content = """
+    html_content = \"\"\"
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -511,7 +591,7 @@ def eurusd_page():
         </script>
     </body>
     </html>
-    """
+    \"\"\"
     return html_content
 
 @app.route('/api/eurusd/data')
@@ -633,9 +713,6 @@ def verify_deployment():
             "timestamp": datetime.now().isoformat(),
             "message": "Erreur lors de la vérification du déploiement"
         }), 500
-
-# Import pour la vérification de déploiement
-from datetime import datetime
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
