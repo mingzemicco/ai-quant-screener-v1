@@ -11,5 +11,6 @@ numpy
 plotly
 lightgbm
 scikit-learn
-urllib3markdown
+urllib3
+markdown
 python-frontmatter
