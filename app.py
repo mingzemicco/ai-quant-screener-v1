@@ -257,7 +257,7 @@ def run_analysis():
 @login_required
 def eurusd_page():
     """Page pour la prédiction EUR/USD"""
-    html_content = \"\"\"
+    html_content = """
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -591,7 +591,7 @@ def eurusd_page():
         </script>
     </body>
     </html>
-    \"\"\"
+    """
     return html_content
 
 @app.route('/api/eurusd/data')
