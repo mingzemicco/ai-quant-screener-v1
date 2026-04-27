@@ -1,6 +1,10 @@
 import os
 import json
-import google.generativeai as genai
+try:
+    import google.generativeai as genai
+    HAS_GEMINI = True
+except ImportError:
+    HAS_GEMINI = False
 from openai import OpenAI
 from database import get_session, PromptConfig
 
@@ -122,7 +126,7 @@ class LLMService:
         try:
             for attempt in range(3):
                 try:
-                    if self.provider == "gemini":
+                    if self.provider == "gemini" and HAS_GEMINI:
                         # Google GenAI way
                         model = genai.GenerativeModel(
                             self.model,
@@ -131,6 +135,9 @@ class LLMService:
                         )
                         response = model.generate_content(user_content)
                         return json.loads(response.text)
+                    elif self.provider == "gemini" and not HAS_GEMINI:
+                        print("  🔴 Gemini requested but google-generativeai package not installed.")
+                        return None
                         
                     else:
                         # OpenAI / Qwen way
@@ -165,3 +172,40 @@ class LLMService:
                 "recommendation": "NEUTRAL",
                 "reasoning": f"Analysis failed ({self.provider}): {str(e)}"
             }
+
+    def analyze_raw(self, prompt: str) -> dict:
+        """
+        Generic method: send a raw prompt to the LLM and return parsed JSON.
+        Used by services like FounderService for custom analysis.
+        """
+        if not self.api_key:
+            return None
+
+        try:
+            if self.provider == "gemini" and HAS_GEMINI:
+                model = genai.GenerativeModel(
+                    self.model,
+                    system_instruction="You are a helpful financial data analyst. Always respond in strict JSON format.",
+                    generation_config={"response_mime_type": "application/json"}
+                )
+                response = model.generate_content(prompt)
+                return json.loads(response.text)
+            elif self.provider == "gemini" and not HAS_GEMINI:
+                print("  🔴 Gemini requested but google-generativeai package not installed.")
+                return None
+            else:
+                if not self.client:
+                    return None
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": "You are a helpful financial data analyst. Always respond in strict JSON format."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    response_format={"type": "json_object"}
+                )
+                content = response.choices[0].message.content
+                return json.loads(content)
+        except Exception as e:
+            print(f"  🔴 LLM raw analysis failed ({self.provider}): {e}")
+            return None

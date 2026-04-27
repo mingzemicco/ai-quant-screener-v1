@@ -9,7 +9,10 @@ import json
 from datetime import datetime, timedelta
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import lightgbm as lgb
+try:
+    import lightgbm as lgb
+except (ImportError, OSError):
+    lgb = None
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score
 import warnings

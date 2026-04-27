@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Founder-Led Companies — S&P 500</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background: #0f0f14;
+            color: #e0e0e6;
+            min-height: 100vh;
+        }
+
+        /* ── Nav Bar ── */
+        .topnav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 32px;
+            background: rgba(18, 18, 26, 0.92);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .topnav-brand {
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: #fff;
+            letter-spacing: -0.3px;
+        }
+        .topnav-brand span { color: #a78bfa; }
+        .topnav-links { display: flex; gap: 6px; }
+        .topnav-links a {
+            color: #9ca3af;
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 500;
+            padding: 7px 14px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .topnav-links a:hover { color: #fff; background: rgba(255,255,255,0.06); }
+        .topnav-links a.active { color: #a78bfa; background: rgba(167,139,250,0.1); }
+
+        /* ── Hero ── */
+        .hero {
+            text-align: center;
+            padding: 48px 24px 32px;
+            background: linear-gradient(180deg, rgba(167,139,250,0.08) 0%, transparent 100%);
+        }
+        .hero h1 {
+            font-size: 2.1rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #a78bfa, #818cf8, #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+        .hero p {
+            color: #9ca3af;
+            font-size: 0.95rem;
+            max-width: 600px;
+            margin: 0 auto 28px;
+            line-height: 1.6;
+        }
+
+        /* ── Stats Row ── */
+        .stats-row {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .stat-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 12px;
+            padding: 10px 20px;
+        }
+        .stat-pill .num {
+            font-size: 1.3rem;
+            font-weight: 800;
+        }
+        .stat-pill .lbl {
+            font-size: 0.78rem;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .stat-founder-led .num { color: #fbbf24; }
+        .stat-founder-chair .num { color: #34d399; }
+        .stat-non-founder .num { color: #6b7280; }
+        .stat-scanned .num { color: #818cf8; }
+
+        /* ── Controls ── */
+        .controls-bar {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            padding: 24px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            border: none;
+            padding: 10px 22px;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #7c3aed, #6366f1);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+        }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4); }
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .btn-ghost {
+            background: rgba(255,255,255,0.05);
+            color: #d1d5db;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .btn-ghost:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .btn-ghost.active { background: rgba(167,139,250,0.15); color: #a78bfa; border-color: rgba(167,139,250,0.3); }
+
+        .status-msg {
+            text-align: center;
+            padding: 0 24px 12px;
+            font-size: 0.82rem;
+            color: #a78bfa;
+            min-height: 20px;
+        }
+
+        /* ── Grid ── */
+        .grid-container {
+            max-width: 1360px;
+            margin: 0 auto;
+            padding: 0 24px 48px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 16px;
+        }
+
+        /* ── Cards ── */
+        .card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+            padding: 20px;
+            transition: all 0.25s;
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            border-radius: 14px 14px 0 0;
+        }
+        .card-high::before { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
+        .card-medium::before { background: linear-gradient(90deg, #34d399, #10b981); }
+        .card-none::before { background: transparent; }
+
+        .card:hover {
+            border-color: rgba(255,255,255,0.12);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+
+        .card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 14px;
+        }
+        .card-company { font-weight: 700; font-size: 1.05rem; color: #f3f4f6; }
+        .card-ticker {
+            display: inline-block;
+            background: rgba(255,255,255,0.06);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #9ca3af;
+            margin-top: 3px;
+            letter-spacing: 0.5px;
+        }
+        .card-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .badge-high {
+            background: linear-gradient(135deg, rgba(251,191,36,0.15), rgba(245,158,11,0.08));
+            color: #fbbf24;
+            border: 1px solid rgba(251,191,36,0.2);
+            box-shadow: 0 0 12px rgba(251,191,36,0.1);
+        }
+        .badge-medium {
+            background: linear-gradient(135deg, rgba(52,211,153,0.12), rgba(16,185,129,0.06));
+            color: #34d399;
+            border: 1px solid rgba(52,211,153,0.2);
+        }
+        .badge-none {
+            background: rgba(255,255,255,0.03);
+            color: #6b7280;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .card-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .info-item {
+            background: rgba(255,255,255,0.02);
+            border-radius: 8px;
+            padding: 8px 12px;
+        }
+        .info-label {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: #6b7280;
+            margin-bottom: 2px;
+        }
+        .info-value {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #d1d5db;
+        }
+
+        .card-detail {
+            background: rgba(255,255,255,0.02);
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 0.82rem;
+            color: #9ca3af;
+            line-height: 1.5;
+            border-left: 2px solid rgba(255,255,255,0.06);
+        }
+        .card-high .card-detail { border-left-color: rgba(251,191,36,0.3); }
+        .card-medium .card-detail { border-left-color: rgba(52,211,153,0.3); }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.04);
+        }
+        .card-score {
+            font-size: 0.72rem;
+            color: #6b7280;
+        }
+        .card-source {
+            font-size: 0.68rem;
+            padding: 3px 8px;
+            border-radius: 6px;
+            color: #9ca3af;
+            background: rgba(255,255,255,0.03);
+        }
+
+        /* ── Bonus Indicator ── */
+        .bonus-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 6px;
+            margin-left: 6px;
+        }
+        .bonus-15 { background: rgba(251,191,36,0.15); color: #fbbf24; }
+        .bonus-10 { background: rgba(52,211,153,0.12); color: #34d399; }
+        .bonus-5  { background: rgba(96,165,250,0.12); color: #60a5fa; }
+
+        /* ── Empty State ── */
+        .empty-state {
+            text-align: center;
+            padding: 80px 24px;
+            color: #6b7280;
+        }
+        .empty-state .icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.5; }
+        .empty-state h3 { color: #9ca3af; margin-bottom: 8px; }
+
+        /* ── Founder List Table (for non-founder) ── */
+        .section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #6b7280;
+            padding: 24px 24px 12px;
+            max-width: 1360px;
+            margin: 0 auto;
+        }
+
+        /* ── Loading spinner ── */
+        .spinner {
+            width: 16px; height: 16px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-top-color: #a78bfa;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 1.5rem; }
+            .grid { grid-template-columns: 1fr; }
+            .topnav { padding: 12px 16px; }
+            .topnav-links a { padding: 6px 10px; font-size: 0.75rem; }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Nav -->
+    <nav class="topnav">
+        <div class="topnav-brand">AI Quant <span>Screener</span></div>
+        <div class="topnav-links">
+            <a href="/web">📊 Screener</a>
+            <a href="/founders" class="active">👑 Founders</a>
+            <a href="/eurusd">📈 EUR/USD</a>
+            <a href="/blog">📝 Blog</a>
+            <a href="/logout">Déconnexion</a>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <div class="hero">
+        <h1>👑 Founder-Led Companies</h1>
+        <p>
+            Research shows founder-led S&P 500 companies outperform 3.1× over 20 years.
+            This dashboard detects which companies still have their original founders at the helm — as CEO, Chairman, or both.
+        </p>
+        <div class="stats-row">
+            <div class="stat-pill stat-founder-led">
+                <div>
+                    <div class="num" id="stat-led">—</div>
+                    <div class="lbl">Founder CEO</div>
+                </div>
+            </div>
+            <div class="stat-pill stat-founder-chair">
+                <div>
+                    <div class="num" id="stat-chair">—</div>
+                    <div class="lbl">Founder Chair</div>
+                </div>
+            </div>
+            <div class="stat-pill stat-non-founder">
+                <div>
+                    <div class="num" id="stat-non">—</div>
+                    <div class="lbl">Non-Founder</div>
+                </div>
+            </div>
+            <div class="stat-pill stat-scanned">
+                <div>
+                    <div class="num" id="stat-scanned">—</div>
+                    <div class="lbl">S&P 500</div>
+                </div>
+            </div>
+            <div class="stat-pill" style="border-color: #ec4899; background: rgba(236,72,153,0.05);">
+                <div>
+                    <div class="num" id="stat-igv" style="color: #ec4899;">—</div>
+                    <div class="lbl">IGV ETF</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-bar">
+        <button class="btn btn-primary" id="scan-btn">🔍 Scan All Companies</button>
+        <button class="btn btn-ghost active" id="filter-all">All</button>
+        <button class="btn btn-ghost" id="filter-led">👑 Founder-Led</button>
+        <button class="btn btn-ghost" id="filter-chair">🏛️ Founder-Chair</button>
+        <button class="btn btn-ghost" id="filter-non">Non-Founder</button>
+        <button class="btn btn-ghost" id="filter-igv" style="border-color: #ec4899; color: #ec4899;">💎 IGV Software</button>
+    </div>
+    <div class="status-msg" id="status-msg"></div>
+
+    <!-- Cards Grid -->
+    <div class="grid-container">
+        <div class="grid" id="cards-grid">
+            <div class="empty-state">
+                <div class="icon">🔍</div>
+                <h3>Loading companies...</h3>
+                <p>Fetching founder data from the database</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allCompanies = [];
+        let currentFilter = 'all';
+
+        // ── Data Loading ──
+        async function loadCompanies() {
+            try {
+                const resp = await fetch('/api/companies');
+                if (!resp.ok) throw new Error('Network error');
+                allCompanies = await resp.json();
+                updateStats();
+                renderCards();
+            } catch (e) {
+                console.error('Error loading companies:', e);
+                document.getElementById('cards-grid').innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">⚠️</div>
+                        <h3>Error loading data</h3>
+                        <p>${e.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // ── Stats ──
+        function updateStats() {
+            let led = 0, chair = 0, non = 0, scanned = 0, igv = 0;
+            allCompanies.forEach(c => {
+                const f = c.founder;
+                if (f && f.is_igv) igv++;
+                if (!f || !f.source || f.source === 'none') return;
+                scanned++;
+                if (f.isFounderCEO) led++;
+                else if (f.isFounderChairman) chair++;
+                else non++;
+            });
+            document.getElementById('stat-led').textContent = led;
+            document.getElementById('stat-chair').textContent = chair;
+            document.getElementById('stat-non').textContent = non;
+            document.getElementById('stat-scanned').textContent = scanned + ' / ' + allCompanies.length;
+            document.getElementById('stat-igv').textContent = igv;
+        }
+
+        // ── Render ──
+        function renderCards() {
+            const grid = document.getElementById('cards-grid');
+            let filtered = allCompanies.filter(c => {
+                const f = c.founder;
+                if (currentFilter === 'all') return true;
+                if (currentFilter === 'igv') return f && f.is_igv;
+                if (!f || !f.source || f.source === 'none') return currentFilter === 'non';
+                if (currentFilter === 'led') return f.isFounderCEO;
+                if (currentFilter === 'chair') return f.isFounderChairman && !f.isFounderCEO;
+                if (currentFilter === 'non') return !f.isFounderCEO && !f.isFounderChairman;
+                return true;
+            });
+
+            // Sort: founder-led first, then by AI score desc
+            filtered.sort((a, b) => {
+                const aBonus = (a.founder && a.founder.founderBonus) || 0;
+                const bBonus = (b.founder && b.founder.founderBonus) || 0;
+                if (bBonus !== aBonus) return bBonus - aBonus;
+                return (b.ai_impact_score || 0) - (a.ai_impact_score || 0);
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📭</div>
+                        <h3>No companies match this filter</h3>
+                        <p>Try scanning companies first, or change the filter.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(c => createCard(c)).join('');
+        }
+
+        function createCard(company) {
+            const f = company.founder || {};
+            const influence = f.founderInfluence || 'none';
+            const scanned = f.source && f.source !== 'none';
+
+            // Badge
+            let badgeHtml, cardClass;
+            if (influence === 'high') {
+                const role = f.isFounderCEO && f.isFounderChairman ? 'CEO + Chairman' : 'CEO';
+                badgeHtml = `<span class="card-badge badge-high">👑 Founder ${role}</span>`;
+                cardClass = 'card-high';
+            } else if (influence === 'medium') {
+                badgeHtml = `<span class="card-badge badge-medium">🏛️ Founder Chairman</span>`;
+                cardClass = 'card-medium';
+            } else {
+                badgeHtml = scanned
+                    ? `<span class="card-badge badge-none">Professional Mgmt</span>`
+                    : `<span class="card-badge badge-none">Not Scanned</span>`;
+                cardClass = 'card-none';
+            }
+
+            // Bonus tag
+            let bonusHtml = '';
+            if (f.founderBonus === 15) bonusHtml = `<span class="bonus-tag bonus-15">+15 pts</span>`;
+            else if (f.founderBonus === 10) bonusHtml = `<span class="bonus-tag bonus-10">+10 pts</span>`;
+            else if (f.founderBonus === 5) bonusHtml = `<span class="bonus-tag bonus-5">+5 pts</span>`;
+
+            // Founders list
+            const foundersStr = (f.founders && f.founders.length > 0)
+                ? f.founders.join(', ')
+                : '—';
+
+            const ceo = f.currentCEO || '—';
+            const chairman = f.currentChairman || '—';
+            const details = f.details || (scanned ? 'No founder involvement detected' : 'Click "Scan All" to analyze');
+            const source = f.source || 'none';
+
+            // AI Score color
+            const score = company.ai_impact_score || 0;
+            const scoreColor = score >= 70 ? '#34d399' : score >= 50 ? '#fbbf24' : '#ef4444';
+
+            return `
+                <div class="card ${cardClass}">
+                    <div class="card-top">
+                        <div>
+                            <div class="card-company">${company.company_name || company.symbol}</div>
+                            <span class="card-ticker">${company.symbol}</span>
+                            ${bonusHtml}
+                        </div>
+                        ${badgeHtml}
+                    </div>
+
+                    <div class="card-info">
+                        <div class="info-item">
+                            <div class="info-label">Founders</div>
+                            <div class="info-value">${foundersStr}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Current CEO</div>
+                            <div class="info-value">${ceo}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Chairman</div>
+                            <div class="info-value">${chairman}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">AI Score</div>
+                            <div class="info-value" style="color:${scoreColor}">${score}/100</div>
+                        </div>
+                    </div>
+
+                    <div class="card-detail">${details}</div>
+
+                    <div class="card-footer">
+                        <span class="card-score">${company.sector || ''}</span>
+                        <span class="card-source">📡 ${source}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ── Filters ──
+        const filterBtns = {
+            'filter-all': 'all',
+            'filter-led': 'led',
+            'filter-chair': 'chair',
+            'filter-non': 'non',
+            'filter-igv': 'igv'
+        };
+
+        Object.entries(filterBtns).forEach(([id, filter]) => {
+            document.getElementById(id).addEventListener('click', () => {
+                currentFilter = filter;
+                // Update active state
+                Object.keys(filterBtns).forEach(btnId => {
+                    document.getElementById(btnId).classList.toggle('active', btnId === id);
+                });
+                renderCards();
+            });
+        });
+
+        // ── Scan Button ──
+        document.getElementById('scan-btn').addEventListener('click', async () => {
+            const btn = document.getElementById('scan-btn');
+            const status = document.getElementById('status-msg');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Scanning...';
+            status.textContent = 'Batch scan started — querying Wikidata for all companies...';
+
+            try {
+                const res = await fetch('/api/founder/batch', { method: 'POST' });
+                const data = await res.json();
+
+                if (data.status === 'started') {
+                    let checks = 0;
+                    const interval = setInterval(async () => {
+                        checks++;
+                        status.textContent = `Scanning in progress... (refresh #${checks})`;
+                        await loadCompanies();
+
+                        // Check if scan looks complete
+                        const scanned = allCompanies.filter(c =>
+                            c.founder && c.founder.source && c.founder.source !== 'none'
+                        ).length;
+
+                        if (scanned >= allCompanies.length * 0.95 || checks > 60) {
+                            clearInterval(interval);
+                            btn.disabled = false;
+                            btn.innerHTML = '🔍 Scan All Companies';
+                            status.textContent = `✅ Scan complete — ${scanned} companies analyzed`;
+                            setTimeout(() => { status.textContent = ''; }, 5000);
+                        }
+                    }, 5000);
+                }
+            } catch (e) {
+                status.textContent = '❌ Error: ' + e.message;
+                btn.disabled = false;
+                btn.innerHTML = '🔍 Scan All Companies';
+            }
+        });
+
+        // ── Init ──
+        document.addEventListener('DOMContentLoaded', loadCompanies);
+    </script>
+</body>
+</html>

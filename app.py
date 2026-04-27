@@ -7,6 +7,7 @@ from werkzeug.security import check_password_hash
 from database import get_session, CompanyAnalysis, User
 from llm_service import LLMService
 from logic import AIScreener
+from founder_service import FounderService
 import markdown
 import frontmatter
 from datetime import datetime
@@ -24,6 +25,7 @@ except ImportError:
 app = Flask(__name__)
 app.secret_key = "ai_quant_screener_secret_ultra_key" # In production, use env variable
 llm_service = LLMService()
+founder_service = FounderService(llm_service)
 
 # Blog content directory
 BLOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'content', 'blog')
@@ -83,6 +85,15 @@ def logout():
 @login_required
 def index():
     filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'index.html')
+    with open(filepath, 'r', encoding='utf-8') as f:
+        return f.read()
+
+@app.route('/founders')
+@login_required
+def founders_page():
+    filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'founders.html')
+    if not os.path.exists(filepath):
+        return "Founders dashboard not found.", 404
     with open(filepath, 'r', encoding='utf-8') as f:
         return f.read()
 
@@ -232,6 +243,18 @@ def get_companies():
                         "Debt/Equity": c.debt_to_equity
                     },
                     "recommendation": c.recommendation
+                },
+                "founder": {
+                    "founders": c.founders or [],
+                    "currentCEO": c.current_ceo or "",
+                    "currentChairman": c.current_chairman or "",
+                    "isFounderCEO": c.is_founder_ceo == "true",
+                    "isFounderChairman": c.is_founder_chairman == "true",
+                    "founderInfluence": c.founder_influence or "none",
+                    "founderBonus": c.founder_bonus or 0,
+                    "source": c.founder_source or "none",
+                    "details": c.founder_details or "",
+                    "is_igv": c.is_igv == "true"
                 }
             })
         return jsonify(results)
@@ -251,6 +274,86 @@ def run_analysis():
     thread = threading.Thread(target=run_full_update)
     thread.start()
     return jsonify({"status": "started", "message": "Full update (Data + AI) started in background."})
+
+# --- FOUNDER DETECTION ROUTES ---
+
+@app.route('/api/founder/<ticker>')
+@login_required
+def get_founder_info(ticker):
+    """Get founder-led status for a single company"""
+    session = get_session()
+    try:
+        company = session.query(CompanyAnalysis).filter_by(symbol=ticker.upper()).first()
+        if not company:
+            return jsonify({"error": f"Company {ticker} not found"}), 404
+        
+        company_name = company.company_name or ticker
+        result = founder_service.get_founder_status(ticker.upper(), company_name)
+        
+        # Save to DB
+        company.founders = result.get("founders", [])
+        company.current_ceo = result.get("currentCEO", "")
+        company.current_chairman = result.get("currentChairman", "")
+        company.is_founder_ceo = str(result.get("isFounderCEO", False)).lower()
+        company.is_founder_chairman = str(result.get("isFounderChairman", False)).lower()
+        company.founder_influence = result.get("founderInfluence", "none")
+        company.founder_bonus = result.get("founderBonus", 0)
+        company.founder_source = result.get("source", "none")
+        company.founder_details = result.get("details", "")
+        session.commit()
+        
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        session.close()
+
+@app.route('/api/founder/batch', methods=['POST'])
+@login_required
+def batch_founder_analysis():
+    """Batch process all companies for founder status (runs in background)"""
+    def run_batch():
+        db_session = get_session()
+        try:
+            companies = db_session.query(CompanyAnalysis).all()
+            service = FounderService(llm_service)
+            
+            for i, company in enumerate(companies):
+                company_name = company.company_name or company.symbol
+                print(f"\n[{i+1}/{len(companies)}] Founder check: {company.symbol} ({company_name})")
+                
+                try:
+                    result = service.get_founder_status(company.symbol, company_name)
+                    
+                    company.founders = result.get("founders", [])
+                    company.current_ceo = result.get("currentCEO", "")
+                    company.current_chairman = result.get("currentChairman", "")
+                    company.is_founder_ceo = str(result.get("isFounderCEO", False)).lower()
+                    company.is_founder_chairman = str(result.get("isFounderChairman", False)).lower()
+                    company.founder_influence = result.get("founderInfluence", "none")
+                    company.founder_bonus = result.get("founderBonus", 0)
+                    company.founder_source = result.get("source", "none")
+                    company.founder_details = result.get("details", "")
+                    
+                    db_session.commit()
+                    print(f"  💾 Saved founder data for {company.symbol}")
+                except Exception as e:
+                    print(f"  ❌ Error for {company.symbol}: {e}")
+                
+                import time
+                time.sleep(0.5)  # Rate limit for Wikidata
+            
+            print("\n✅ Batch founder analysis complete!")
+        except Exception as e:
+            print(f"Batch founder error: {e}")
+        finally:
+            db_session.close()
+    
+    thread = threading.Thread(target=run_batch)
+    thread.start()
+    return jsonify({"status": "started", "message": "Batch founder analysis started in background."})
+
+# --- END FOUNDER ROUTES ---
 
 # Routes pour la prédiction EUR/USD
 @app.route('/eurusd')

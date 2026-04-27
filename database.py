@@ -21,6 +21,19 @@ class CompanyAnalysis(Base):
     recommendation = Column(String)  # LONG, SHORT, NEUTRAL
     reasoning = Column(Text)
     analysis_json = Column(JSON)  # Store full analysis structure for flexibility
+    
+    # Founder-LED detection columns
+    founders = Column(JSON)              # ["Steve Jobs", "Steve Wozniak", ...]
+    current_ceo = Column(String)         # "Tim Cook"
+    current_chairman = Column(String)    # "Arthur D. Levinson"
+    is_founder_ceo = Column(String)      # "true" / "false"
+    is_founder_chairman = Column(String) # "true" / "false"
+    founder_influence = Column(String)   # "high" / "medium" / "low" / "none"
+    founder_bonus = Column(Float)        # 0, 3, 5, 10, or 15
+    founder_source = Column(String)      # "wikidata" / "wikipedia+llm" / "llm_only" / "none"
+    founder_details = Column(Text)       # Human-readable explanation
+    is_igv = Column(String, default="false") # "true" / "false"
+    
     last_updated = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 class PromptConfig(Base):
