@@ -431,8 +431,9 @@
             const scoreColor = isLong ? '#4CAF50' : '#F44336';
 
             // Formater le raisonnement pour l'affichage (remplacer les points virgules par des retours à la ligne)
-            const reasoningHtml = company.analysis.reasoning
+            const reasoningHtml = (company.analysis.reasoning || '')
                 .split(';')
+                .filter(r => r.trim())
                 .map(r => `<div class="reasoning-item">${r.trim()}</div>`)
                 .join('');
 
