@@ -451,8 +451,8 @@
                     </div>
                     
                     <div class="metrics-row">
-                        <div class="metric-badge">Price: $${company.current_price.toFixed(2)}</div>
-                        <div class="metric-badge">P/E: ${company.analysis.metrics['P/E Ratio'].toFixed(1)}</div>
+                        <div class="metric-badge">Price: ${company.current_price != null ? '$' + company.current_price.toFixed(2) : 'N/A'}</div>
+                        <div class="metric-badge">P/E: ${company.analysis.metrics['P/E Ratio'] != null ? company.analysis.metrics['P/E Ratio'].toFixed(1) : 'N/A'}</div>
                         <div class="metric-badge">Cap: ${formatNumber(company.market_cap)}</div>
                     </div>
 
